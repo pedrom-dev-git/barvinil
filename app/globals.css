@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+ * PROPOSTA INICIAL DE IDENTIDADE — trocável.
+ *
+ * O item 7 do template (interfaces, paleta, tipografia) é entregável assinado
+ * pela Duda, do Design Gráfico. Isto aqui é ponto de partida para ela editar, não
+ * decisão fechada: toda cor e toda fonte da página vivem NESTE bloco. Nenhum
+ * componente carrega hex solto. Trocar a identidade inteira = editar este arquivo.
+ *
+ * Direção: listening bar. Escuro, quente, analógico. Referência de categoria —
+ * Spiritland (Londres), In Sheep's Clothing (LA), Bar Martha (Tóquio). O oposto
+ * do clichê "vinil retrô neon anos 80".
+ *
+ * Contraste medido contra --color-noite (RNF07 pede WCAG AA, que é 4,5:1):
+ *   creme       #F2EBDF  ~16,0:1   texto corrido
+ *   creme-suave #B8AE9F   ~8,8:1   texto secundário
+ *   latao       #C9973F   ~7,2:1   links e CTA
+ * E o texto escuro sobre o botão de latão: noite sobre #C9973F ~7,2:1.
+ * ------------------------------------------------------------------------- */
+
+@theme {
+  --color-noite: #0e0b09;
+  --color-carvao: #1a1512;
+  --color-carvao-claro: #241d18;
+  --color-creme: #f2ebdf;
+  --color-creme-suave: #b8ae9f;
+  --color-latao: #c9973f;
+  --color-latao-claro: #e0b662;
+  --color-oxblood: #5c1f22;
+
+  --font-display: var(--fonte-display), Georgia, "Times New Roman", serif;
+  --font-body: var(--fonte-body), ui-sans-serif, system-ui, sans-serif;
+
+  --tracking-marquise: 0.28em;
+}
+
+/* A casa é escura por decisão de identidade, não por preferência do sistema.
+   Declarado para o navegador pintar os controles nativos na chave certa. */
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-noite);
+  color: var(--color-creme);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Foco visível sempre — navegação por teclado é RNF07. */
+:focus-visible {
+  outline: 2px solid var(--color-latao-claro);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+@layer utilities {
+  /* Grão de filme. SVG inline em data URI: nenhuma requisição, nenhuma lib. */
+  .grao::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Rotação de disco: 24s por volta. Lenta o bastante para não puxar o olho. */
+  .gira {
+    animation: gira 24s linear infinite;
+  }
+}
+
+@keyframes gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* RNF07 / WCAG 2.3.3 — quem pediu menos movimento não recebe movimento nenhum. */
+@media (prefers-reduced-motion: reduce) {
+  .gira {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

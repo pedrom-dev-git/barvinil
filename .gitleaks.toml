@@ -1,0 +1,9 @@
+# Herda o conjunto de regras padrão do gitleaks e afrouxa só o que é ruído neste repo.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Falsos positivos conhecidos"
+paths = [
+  '''pnpm-lock\.yaml''',
+]
