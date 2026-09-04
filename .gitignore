@@ -11,3 +11,13 @@ playwright-report/
 blob-report/
 .playwright/
 .DS_Store
+
+# Marca e fotos do bar — propriedade da casa, não nossas para publicar.
+# O site funciona sem elas (ver README, seção "Assets da marca").
+/public/logo-vinil.png
+/public/fotos/*
+!/public/fotos/.gitkeep
+
+# Documentos internos do grupo — vivem no repo da disciplina, não neste.
+/CLAUDE.md
+/ASSETS.md

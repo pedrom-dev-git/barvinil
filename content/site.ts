@@ -112,6 +112,19 @@ export const site = {
     status: "a-preencher",
   } as Dado<string>,
 
+  /**
+   * The wordmark file, expected at public/<valor>.
+   *
+   * NOT committed: the logo is the bar's trademark, not ours to publish. Drop the
+   * file in place locally and the hero uses it; without it the hero sets the name in
+   * type instead and the page still works. A clean clone is never broken by its absence.
+   */
+  logotipo: {
+    valor: "logo-vinil.png",
+    fonte: "fornecido pelo dono via Rei, 2026-09-04 — marca de terceiro, fora do git",
+    status: "confirmado",
+  } as Dado<string>,
+
   endereco: {
     valor: {
       logradouro: "R. Cel. Vicente, 126",

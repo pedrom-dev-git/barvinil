@@ -28,5 +28,10 @@
     "eslint-config-next": "^15.5.0",
     "tailwindcss": "^4.1.0",
     "typescript": "^5.7.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": "^8.5.28"
+    }
   }
 }

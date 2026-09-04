@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import Image from "next/image";
 import { site, preenchido } from "@/content/site";
 import { linkWhatsApp } from "@/lib/whatsapp";
@@ -10,6 +12,14 @@ import { Sulcos } from "./Sulcos";
  */
 export function Hero() {
   const nome = preenchido(site.nomeCompleto) ? site.nomeCompleto.valor : "Vinil";
+
+  // Server component, so this is a build-time check. The logo file is deliberately
+  // not in the repository (it is the bar's trademark), so the page has to stand up
+  // without it — the name is set in type instead. Jost is close enough to the
+  // wordmark that the fallback reads as the brand rather than as a broken image.
+  const temLogo =
+    preenchido(site.logotipo) &&
+    existsSync(join(process.cwd(), "public", site.logotipo.valor));
   const cidade = preenchido(site.endereco)
     ? `${site.endereco.valor.cidade} · ${site.endereco.valor.uf}`
     : null;
@@ -24,14 +34,20 @@ export function Hero() {
 
       <div className="relative z-10 mx-auto w-full max-w-md sm:max-w-2xl lg:max-w-4xl">
         <h1 className="mb-7">
-          <Image
-            src="/logo-vinil.png"
-            alt={nome}
-            width={948}
-            height={336}
-            priority
-            className="h-auto w-52 sm:w-72 lg:w-96"
-          />
+          {temLogo && preenchido(site.logotipo) ? (
+            <Image
+              src={`/${site.logotipo.valor}`}
+              alt={nome}
+              width={948}
+              height={336}
+              priority
+              className="h-auto w-52 sm:w-72 lg:w-96"
+            />
+          ) : (
+            <span className="block font-display text-6xl lowercase leading-none tracking-tight text-creme sm:text-8xl lg:text-9xl">
+              vinil
+            </span>
+          )}
         </h1>
 
         <p className="font-display text-[0.7rem] uppercase tracking-marquise text-creme-suave sm:text-xs">

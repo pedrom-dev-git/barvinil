@@ -23,12 +23,16 @@ test("renders the five sections, in the order the plan fixed", async ({ page }) 
 test("leads with the wordmark and the tagline, above the fold", async ({ page }) => {
   const tagline = preenchido(site.tagline) ? site.tagline.valor : "";
 
-  // The h1 is the logo image: the mark IS the name, so the accessible name has to
-  // carry it. Typing the name in a font that is not the logo's would be worse.
+  // The h1 carries the wordmark. It renders as the logo image when public/ has the
+  // file and as type when it does not — the logo is the bar's trademark and is not
+  // committed, so asserting on the <img> would fail on a clean clone by design.
+  // What must hold either way is the accessible name.
   const h1 = page.getByRole("heading", { level: 1 });
   await expect(h1).toBeVisible();
   await expect(h1).toHaveAccessibleName(/vinil/i);
-  await expect(h1.locator("img")).toBeVisible();
+
+  const logo = h1.locator("img");
+  if ((await logo.count()) > 0) await expect(logo).toBeVisible();
 
   await expect(page.locator("section#hero")).toContainText(tagline);
 });
