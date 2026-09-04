@@ -1,0 +1,107 @@
+import { test, expect } from "@playwright/test";
+import { site, preenchido } from "../content/site";
+import { linkWhatsApp, MENSAGENS } from "../lib/whatsapp";
+
+/** The five sections plano-pmv.md §1 fixed, in order. The scope does not grow. */
+const SECOES = ["hero", "casa", "fotos", "onde", "reservar"] as const;
+
+test.beforeEach(async ({ page }) => {
+  await page.goto("/");
+});
+
+test("renders the five sections, in the order the plan fixed", async ({ page }) => {
+  for (const id of SECOES) {
+    await expect(page.locator(`section#${id}`)).toBeVisible();
+  }
+
+  const ordemNaPagina = await page
+    .locator("section[id]")
+    .evaluateAll((nodes) => nodes.map((n) => n.id));
+  expect(ordemNaPagina).toEqual([...SECOES]);
+});
+
+test("leads with the wordmark and the tagline, above the fold", async ({ page }) => {
+  const tagline = preenchido(site.tagline) ? site.tagline.valor : "";
+
+  // The h1 is the logo image: the mark IS the name, so the accessible name has to
+  // carry it. Typing the name in a font that is not the logo's would be worse.
+  const h1 = page.getByRole("heading", { level: 1 });
+  await expect(h1).toBeVisible();
+  await expect(h1).toHaveAccessibleName(/vinil/i);
+  await expect(h1.locator("img")).toBeVisible();
+
+  await expect(page.locator("section#hero")).toContainText(tagline);
+});
+
+test("the booking CTA opens WhatsApp with the message already written", async ({ page }) => {
+  const whats = site.whatsapp;
+  test.skip(!preenchido(whats), "no phone number in content/site.ts");
+  if (!preenchido(whats)) return;
+
+  const esperado = linkWhatsApp(whats.valor.e164, "reserva");
+  const cta = page.getByRole("link", { name: /reservar mesa/i }).first();
+
+  await expect(cta).toBeVisible();
+  await expect(cta).toHaveAttribute("href", esperado);
+  expect(decodeURIComponent(esperado)).toContain(MENSAGENS.reserva);
+});
+
+test("address, phone, menu and Instagram match content/site.ts", async ({ page }) => {
+  const onde = page.locator("section#onde");
+
+  if (preenchido(site.endereco)) {
+    const e = site.endereco.valor;
+    await expect(onde).toContainText(e.logradouro);
+    await expect(onde).toContainText(e.bairro);
+    await expect(onde.getByRole("link", { name: /como chegar|mapa/i })).toHaveAttribute(
+      "href",
+      e.mapsUrl,
+    );
+  }
+  if (preenchido(site.whatsapp)) {
+    await expect(onde).toContainText(site.whatsapp.valor.exibicao);
+  }
+  if (preenchido(site.cardapio)) {
+    await expect(onde.getByRole("link", { name: /cardápio/i })).toHaveAttribute(
+      "href",
+      site.cardapio.valor,
+    );
+  }
+  if (preenchido(site.instagram)) {
+    await expect(onde.getByRole("link", { name: /instagram|@barvinil/i })).toHaveAttribute(
+      "href",
+      site.instagram.valor.url,
+    );
+  }
+});
+
+test("no unfilled placeholder ever reaches the page", async ({ page }) => {
+  const texto = (await page.locator("body").innerText()).toLowerCase();
+  expect(texto).not.toContain("a preencher");
+  expect(texto).not.toContain("⟨");
+  expect(texto).not.toContain("undefined");
+  expect(texto).not.toContain("null");
+});
+
+test("the phone viewport never scrolls sideways", async ({ page }) => {
+  const estouro = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(estouro).toBeLessThanOrEqual(0);
+});
+
+test("every tap target on the phone is at least 44px tall", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile", "tap targets are a touch concern");
+
+  const alvos = page.locator("section a, section button");
+  const total = await alvos.count();
+  expect(total).toBeGreaterThan(0);
+
+  for (let i = 0; i < total; i++) {
+    const alvo = alvos.nth(i);
+    if (!(await alvo.isVisible())) continue;
+    const caixa = await alvo.boundingBox();
+    expect(caixa, `alvo ${i} sem caixa`).not.toBeNull();
+    expect.soft(caixa!.height, `alvo ${i}: "${await alvo.innerText()}"`).toBeGreaterThanOrEqual(44);
+  }
+});
