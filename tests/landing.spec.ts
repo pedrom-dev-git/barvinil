@@ -83,6 +83,25 @@ test("no unfilled placeholder ever reaches the page", async ({ page }) => {
   expect(texto).not.toContain("null");
 });
 
+test("copy the owner has not approved never reaches the page", async ({ page }) => {
+  // A `a-preencher` field can still hold draft text — copy the group wrote and the
+  // owner has not signed off on. Checking only for ⟨A PREENCHER⟩ misses it entirely:
+  // this pins the actual draft strings.
+  const rascunhos = Object.values(site)
+    .filter((d) => (d as { status: string }).status === "a-preencher")
+    .map((d) => (d as { valor: unknown }).valor)
+    .filter((v): v is string => typeof v === "string" && v.length > 24);
+
+  expect(rascunhos.length, "no draft copy left to guard — relax this test").toBeGreaterThan(0);
+
+  const texto = await page.locator("body").innerText();
+  for (const rascunho of rascunhos) {
+    expect(texto, `draft copy leaked: "${rascunho.slice(0, 40)}…"`).not.toContain(
+      rascunho.slice(0, 40),
+    );
+  }
+});
+
 test("the phone viewport never scrolls sideways", async ({ page }) => {
   const estouro = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

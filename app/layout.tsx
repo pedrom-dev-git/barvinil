@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, Inter } from "next/font/google";
+import { Inter, Jost } from "next/font/google";
 import { site, preenchido } from "@/content/site";
 import "./globals.css";
 
-const display = Instrument_Serif({
-  weight: "400",
+const display = Jost({
   subsets: ["latin"],
   display: "swap",
   variable: "--fonte-display",

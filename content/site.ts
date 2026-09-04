@@ -24,9 +24,16 @@ export type Dado<T> = {
   readonly status: Status;
 };
 
-/** Narrows a `Dado` to one that actually has a value, so callers can skip the rest. */
+/**
+ * Narrows a `Dado` to one that is safe to put on the page.
+ *
+ * Checks the status, not just the value. A draft can carry text while still being
+ * `a-preencher` — copy the group wrote that the owner has not signed off on — and
+ * that is precisely what must not reach a visitor. Checking `valor !== null` alone
+ * let one of those through into the rendered page once.
+ */
 export function preenchido<T>(d: Dado<T>): d is Dado<T> & { valor: T } {
-  return d.valor !== null;
+  return d.valor !== null && d.status !== "a-preencher";
 }
 
 const BIO_SITE = "bio.site/Vinilbar, consultado em 2026-09-04";

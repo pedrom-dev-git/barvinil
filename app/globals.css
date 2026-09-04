@@ -4,39 +4,43 @@
  * PROPOSTA INICIAL DE IDENTIDADE — trocável.
  *
  * O item 7 do template (interfaces, paleta, tipografia) é entregável assinado
- * pela Duda, do Design Gráfico. Isto aqui é ponto de partida para ela editar, não
- * decisão fechada: toda cor e toda fonte da página vivem NESTE bloco. Nenhum
- * componente carrega hex solto. Trocar a identidade inteira = editar este arquivo.
+ * pela Duda, do Design Gráfico. Isto é ponto de partida para ela editar, não
+ * decisão fechada: toda cor e toda fonte vivem NESTE bloco. Nenhum componente
+ * carrega hex solto — trocar a identidade inteira é editar este arquivo.
  *
- * Direção: listening bar. Escuro, quente, analógico. Referência de categoria —
- * Spiritland (Londres), In Sheep's Clothing (LA), Bar Martha (Tóquio). O oposto
- * do clichê "vinil retrô neon anos 80".
+ * A paleta não foi inventada: saiu do logotipo que o dono forneceu.
+ *   - `public/logo-vinil.png` é monocromático, uma cor sólida só: #E5DAC6.
+ *   - O bar se apresenta em preto (informado pelo Rei em 2026-09-04).
+ * Então o sistema é de DUAS cores — creme sobre preto — e nada além disso.
+ * Nenhum terceiro tom foi acrescentado: a marca é monocromática e a página
+ * respeita isso. Se a Duda quiser um acento, ele nasce aqui.
  *
- * Contraste medido contra --color-noite (RNF07 pede WCAG AA, que é 4,5:1):
- *   creme       #F2EBDF  ~16,0:1   texto corrido
- *   creme-suave #B8AE9F   ~8,8:1   texto secundário
- *   latao       #C9973F   ~7,2:1   links e CTA
- * E o texto escuro sobre o botão de latão: noite sobre #C9973F ~7,2:1.
+ * Contraste medido contra --color-noite (RNF07 pede WCAG AA = 4,5:1):
+ *   creme       #E5DAC6  ~15,4:1  texto corrido, logotipo, botão preenchido
+ *   creme-suave #A2977F   ~6,9:1  texto secundário e legendas
+ *   noite sobre creme (texto do botão preenchido)  ~15,4:1
+ *
+ * Tipografia: o wordmark é uma sans geométrica em caixa baixa, com pingos
+ * circulares e terminais retos — e o "v" abre num traço que sobe como o braço
+ * de um toca-discos. Jost é a geométrica de código aberto mais próxima disso,
+ * então os títulos parecem extensão do logotipo em vez de brigar com ele.
+ * ⚠️ A fonte REAL do logotipo é desconhecida — perguntar a quem o desenhou.
  * ------------------------------------------------------------------------- */
 
 @theme {
-  --color-noite: #0e0b09;
-  --color-carvao: #1a1512;
-  --color-carvao-claro: #241d18;
-  --color-creme: #f2ebdf;
-  --color-creme-suave: #b8ae9f;
-  --color-latao: #c9973f;
-  --color-latao-claro: #e0b662;
-  --color-oxblood: #5c1f22;
+  --color-noite: #0b0a09;
+  --color-carvao: #15130f;
+  --color-carvao-claro: #211d18;
+  --color-creme: #e5dac6;
+  --color-creme-suave: #a2977f;
 
-  --font-display: var(--fonte-display), Georgia, "Times New Roman", serif;
+  --font-display: var(--fonte-display), "Futura", "Century Gothic", sans-serif;
   --font-body: var(--fonte-body), ui-sans-serif, system-ui, sans-serif;
 
-  --tracking-marquise: 0.28em;
+  --tracking-marquise: 0.3em;
 }
 
-/* A casa é escura por decisão de identidade, não por preferência do sistema.
-   Declarado para o navegador pintar os controles nativos na chave certa. */
+/* A casa é escura por identidade, não por preferência do sistema. */
 :root {
   color-scheme: dark;
 }
@@ -48,9 +52,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Foco visível sempre — navegação por teclado é RNF07. */
+/* Foco sempre visível — navegação por teclado é RNF07. */
 :focus-visible {
-  outline: 2px solid var(--color-latao-claro);
+  outline: 2px solid var(--color-creme);
   outline-offset: 3px;
   border-radius: 2px;
 }
@@ -62,13 +66,24 @@ body {
     position: absolute;
     inset: 0;
     pointer-events: none;
-    opacity: 0.05;
+    opacity: 0.045;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
-  /* Rotação de disco: 24s por volta. Lenta o bastante para não puxar o olho. */
+  /* Rotação de disco: 45 s por volta. Lenta o bastante para não puxar o olho.
+   *
+   * Movimento é OPT-IN, não override: parado é o estado base, e a animação só é
+   * ligada dentro de (prefers-reduced-motion: no-preference). Escrito ao contrário
+   * — animar por padrão e desligar depois — a regra de desligar tem que ganhar uma
+   * briga de cascata com as camadas do Tailwind, e perde. Assim não há briga. */
   .gira {
-    animation: gira 24s linear infinite;
+    animation: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .gira {
+      animation: gira 45s linear infinite;
+    }
   }
 }
 
@@ -78,12 +93,9 @@ body {
   }
 }
 
-/* RNF07 / WCAG 2.3.3 — quem pediu menos movimento não recebe movimento nenhum. */
+/* RNF07 / WCAG 2.3.3 — quem pediu menos movimento não recebe movimento nenhum.
+   O disco já está coberto acima (movimento é opt-in); isto pega todo o resto. */
 @media (prefers-reduced-motion: reduce) {
-  .gira {
-    animation: none;
-  }
-
   *,
   *::before,
   *::after {
