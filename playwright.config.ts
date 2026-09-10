@@ -7,6 +7,9 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./tests",
+  // export.spec.ts asserts on the out/ directory, which only exists after a build
+  // with the Pages base path. It has its own config and its own command.
+  testIgnore: "export.spec.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

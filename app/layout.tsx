@@ -23,6 +23,11 @@ const cidade =
 export const metadata: Metadata = {
   title: `${nome}${cidade ? ` · ${cidade}` : ""}`,
   description: tagline,
+  // Most of content/site.ts is still `fonte-publica` — address, phone and menu taken
+  // from the bar's own public profiles, none of it confirmed by the owner. Until he
+  // signs off, this page must not turn up in search as the house's official site.
+  // public/robots.txt says the same thing to crawlers that never read the HTML.
+  robots: { index: false, follow: false },
   openGraph: {
     title: nome,
     description: tagline,

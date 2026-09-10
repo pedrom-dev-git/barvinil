@@ -3,6 +3,7 @@ import { join } from "node:path";
 import Image from "next/image";
 import { site, preenchido } from "@/content/site";
 import { linkWhatsApp } from "@/lib/whatsapp";
+import { asset } from "@/lib/asset";
 import { Botao } from "./Botao";
 import { Sulcos } from "./Sulcos";
 
@@ -36,7 +37,7 @@ export function Hero() {
         <h1 className="mb-7">
           {temLogo && preenchido(site.logotipo) ? (
             <Image
-              src={`/${site.logotipo.valor}`}
+              src={asset(`/${site.logotipo.valor}`)}
               alt={nome}
               width={948}
               height={336}

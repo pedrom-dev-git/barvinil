@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { site } from "@/content/site";
+import { asset } from "@/lib/asset";
 import { Sulcos } from "./Sulcos";
 
 /**
@@ -52,7 +53,7 @@ export function Galeria() {
             >
               {foto.arquivo ? (
                 <Image
-                  src={`/fotos/${foto.arquivo}`}
+                  src={asset(`/fotos/${foto.arquivo}`)}
                   alt={foto.alt}
                   fill
                   sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
