@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:export": "NEXT_PUBLIC_BASE_PATH=/barvinil next build && playwright test --config=playwright.export.config.ts"
   },
   "dependencies": {
     "next": "^15.5.0",
