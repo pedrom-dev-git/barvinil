@@ -1,9 +1,7 @@
-# Herda o conjunto de regras padrão do gitleaks e afrouxa só o que é ruído neste repo.
+# Herda o conjunto de regras padrão do gitleaks. Sem allowlist: o pnpm-lock.yaml
+# estava dispensado como ruído, e ruído ele é hoje — mas é exatamente onde uma URL
+# de registry privado com token apareceria amanhã, sem ninguém ver. Auditado em
+# 2026-09-10: varredura dos 7 commits com as regras default e sem allowlist, zero
+# achados. Se voltar a acusar falso positivo, allowlistar a regra, não o arquivo.
 [extend]
 useDefault = true
-
-[allowlist]
-description = "Falsos positivos conhecidos"
-paths = [
-  '''pnpm-lock\.yaml''',
-]
