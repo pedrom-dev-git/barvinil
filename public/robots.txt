@@ -1,2 +1,6 @@
+# Crawling is allowed on purpose. The page carries <meta name="robots" content=
+# "noindex, nofollow"> (app/layout.tsx), and a crawler has to be able to fetch the
+# page to read it. Blocking here instead would leave the URL indexable as a bare
+# link — the opposite of what is wanted while content/site.ts is still fonte-publica.
 User-agent: *
-Disallow: /
+Allow: /
