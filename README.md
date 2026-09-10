@@ -9,6 +9,15 @@ problema real, e um sistema web entregue a ela ao fim do semestre.
 **Estado:** landing page. O sistema de reserva de mesa (fluxo do cliente + painel do administrador)
 vem em seguida.
 
+**No ar:** <https://pedrom-dev-git.github.io/barvinil/> — publicado a cada push na `main`
+(`.github/workflows/deploy.yml`). A página sai **`noindex`**, de propósito: quase todo campo de
+`content/site.ts` ainda é `fonte-publica`, e isto não pode aparecer na busca como o site oficial da
+casa antes de o dono aprovar o conteúdo. Quando aprovar, é tirar `robots` do `app/layout.tsx`.
+
+O `public/robots.txt` **permite** o rastreamento, e isso é intencional: os dois não se somam. Um
+crawler barrado por `Disallow: /` nunca busca a página, logo nunca lê o `noindex` — e a URL segue
+indexável como link nu. Quem desindexa é a meta tag.
+
 ## Rodar
 
 ```bash
@@ -23,7 +32,14 @@ pnpm build      # build de produção
 pnpm lint
 pnpm typecheck
 pnpm test:e2e   # Playwright — viewport mobile é o projeto padrão
+pnpm test:export # build estático do Pages + as asserções sobre out/
 ```
+
+O GitHub Pages serve o repo a partir de `/barvinil`, e não da raiz de um domínio. Por isso o build
+do deploy roda com `NEXT_PUBLIC_BASE_PATH=/barvinil` e todo arquivo de `public/` é referenciado via
+`asset()` (`lib/asset.ts`) — o `next/image` deixa de aplicar o base path quando
+`images.unoptimized` está ligado, que o export exige. `tests/export.spec.ts` reprova qualquer URL
+absoluta que escape disso; é o erro que publica verde e entrega a página sem estilo.
 
 ## Onde mexer
 
