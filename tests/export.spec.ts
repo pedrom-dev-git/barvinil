@@ -57,10 +57,16 @@ test("the page asks search engines to stay away", () => {
   // the bar's public profiles, not confirmed by the owner. Until he signs off, this
   // must not surface in search as the house's official site.
   expect(html()).toMatch(/<meta name="robots" content="[^"]*noindex/);
+});
 
+test("robots.txt lets crawlers in, so they can read the noindex", () => {
+  // The two do not stack: a crawler blocked by robots.txt never fetches the page, so
+  // it never sees the noindex — and Google may still index the bare URL when something
+  // links to it, which the public README does. Disallow here would defeat the noindex
+  // it is meant to reinforce. Blocking belongs in the meta tag, not in the fetch.
   const robots = join(OUT, "robots.txt");
   expect(existsSync(robots), "out/robots.txt is missing").toBe(true);
-  expect(readFileSync(robots, "utf8")).toMatch(/^\s*Disallow:\s*\/\s*$/m);
+  expect(readFileSync(robots, "utf8")).not.toMatch(/^\s*Disallow:\s*\/\s*$/m);
 });
 
 test("the five sections are in the exported HTML, not built by the client", () => {
