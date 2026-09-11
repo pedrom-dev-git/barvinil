@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Jost } from "next/font/google";
 import { site, preenchido } from "@/content/site";
+import { Rodape } from "@/components/Rodape";
 import "./globals.css";
 
 const display = Jost({
@@ -43,7 +44,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" className={`${display.variable} ${body.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Rodape />
+      </body>
     </html>
   );
 }
