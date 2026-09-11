@@ -128,3 +128,23 @@ test("every tap target on the phone is at least 44px tall", async ({ page }, tes
     expect.soft(caixa!.height, `alvo ${i}: "${await alvo.innerText()}"`).toBeGreaterThanOrEqual(44);
   }
 });
+
+test("the page says it is a class prototype, not the house's official site", async ({ page }) => {
+  // The site is published, and content/site.ts is still largely `fonte-publica`:
+  // facts about the bar taken from its public profiles, which the owner has not
+  // confirmed. Whoever opens the link has to be told that, on the page — robots.txt
+  // and the README reach nobody who just received the URL.
+  const rodape = page.locator("footer");
+  await expect(rodape).toBeVisible();
+
+  const aviso = await rodape.innerText();
+  expect(aviso).toMatch(/prot[óo]tipo acad[êe]mico/i);
+  expect(aviso).toMatch(/n[ãa]o\s+é\s+o\s+site\s+oficial/i);
+  expect(aviso).toMatch(/unilasalle/i);
+
+  // It must not read as a sixth section: the scope is five, and the plan says so.
+  const ordemNaPagina = await page
+    .locator("section[id]")
+    .evaluateAll((nodes) => nodes.map((n) => n.id));
+  expect(ordemNaPagina).toEqual([...SECOES]);
+});
