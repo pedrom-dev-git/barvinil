@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { site, preenchido } from "../content/site";
 import { linkWhatsApp, MENSAGENS } from "../lib/whatsapp";
 
@@ -147,4 +149,49 @@ test("the page says it is a class prototype, not the house's official site", asy
     .locator("section[id]")
     .evaluateAll((nodes) => nodes.map((n) => n.id));
   expect(ordemNaPagina).toEqual([...SECOES]);
+});
+
+test("wears the official brandbook palette: Areia Rosada on Musgo Urbano", async ({ page }) => {
+  // BrandBook_VINIL25 p.23, delivered by the owner on 2026-09-25. It replaces the
+  // cream-on-black that had been inferred from the logo PNG alone.
+  const body = page.locator("body");
+  await expect(body).toHaveCSS("background-color", "rgb(26, 43, 47)");
+  await expect(body).toHaveCSS("color", "rgb(255, 237, 210)");
+});
+
+test("sets text in Gorga Grotesque and the one call-out in Dancing Script", async ({ page }) => {
+  // Brandbook p.24–25: Gorga for running text and contact data, Dancing Script for
+  // "calls or words that demand emphasis" — and it warns against excess.
+  const familia = (el: Element) => getComputedStyle(el).fontFamily;
+  expect(await page.locator("body").evaluate(familia)).toMatch(/gorga/i);
+
+  const destaques = await page
+    .locator("body *")
+    .evaluateAll((els) =>
+      els.filter((el) => /dancing/i.test(getComputedStyle(el).fontFamily) && el.children.length === 0),
+    );
+  expect(destaques.length).toBeGreaterThan(0);
+  expect(destaques.length, "the brandbook warns against excess").toBeLessThanOrEqual(2);
+});
+
+test("uses the official artwork for the wordmark and the V icon as favicon", async ({ page }) => {
+  // Both files are the bar's trademark and stay out of git, so on a clean clone
+  // there is nothing to assert — same rule as the logo in the hero test.
+  const temIcone = existsSync(join(process.cwd(), "public", "icon.png"));
+  const temLogo = existsSync(join(process.cwd(), "public", "logo-vinil.png"));
+  test.skip(!temIcone && !temLogo, "brand files not installed in public/");
+
+  if (temIcone) {
+    await expect(page.locator('link[rel="icon"]')).toHaveAttribute("href", /\/icon\.png/);
+  }
+  if (temLogo) {
+    // The official lockup carries "(hi-fi bar)" under the name: ~2.2:1, where the
+    // old bare wordmark was ~2.8:1.
+    const logo = page.getByRole("heading", { level: 1 }).locator("img");
+    const proporcao = await logo.evaluate(
+      (img: HTMLImageElement) => img.naturalWidth / img.naturalHeight,
+    );
+    expect(proporcao).toBeGreaterThan(2.1);
+    expect(proporcao).toBeLessThan(2.3);
+  }
 });
