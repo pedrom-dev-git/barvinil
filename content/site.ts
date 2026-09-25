@@ -203,15 +203,15 @@ export const site = {
       },
       {
         id: "prato",
-        arquivo: null,
+        arquivo: "prato.jpg",
         pedido: "Um prato da cozinha, bem iluminado.",
-        alt: "Prato servido no VINIL",
+        alt: "Mesa posta com petiscos, carnes e drinks sob o logotipo do VINIL na parede",
       },
       {
         id: "drink",
-        arquivo: null,
+        arquivo: "drink.jpg",
         pedido: "Um drink autoral no balcão.",
-        alt: "Drink autoral do VINIL",
+        alt: "Dois drinks e uma tábua de petiscos numa bandeja, sob luz quente",
       },
       {
         id: "salao",
@@ -221,6 +221,8 @@ export const site = {
         alt: "Salão do VINIL à noite",
       },
     ] as ReadonlyArray<FotoSlot>,
+    // prato and drink: provisional, sent by Pedro on 2026-09-25 (734×1048, below the
+    // 1600px the brief asks for). The rest is still owed by the house.
     fonte: "⟨A PREENCHER: o dono — o grupo não produz foto (plano-pmv.md §1)⟩",
     status: "a-preencher",
   } as Dado<ReadonlyArray<FotoSlot>>,

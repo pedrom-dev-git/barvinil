@@ -182,3 +182,22 @@ test("uses the official artwork for the wordmark and the V icon as favicon", asy
     expect(proporcao).toBeLessThan(2.3);
   }
 });
+
+test("the gallery leads with the photos it has, and never shows a broken one", async ({ page }) => {
+  // Photos are the house's and stay out of git, so a slot can name a file this
+  // checkout does not have — the deploy, for one. Such a slot must render as an
+  // empty frame, not as a broken image.
+  const disponiveis = (site.fotos.valor ?? []).filter(
+    (f) => f.arquivo !== null && existsSync(join(process.cwd(), "public", "fotos", f.arquivo)),
+  );
+  const n = disponiveis.length;
+
+  const quadros = page.locator("section#fotos li");
+  // Photos first, then empty frames only up to the end of the row of three.
+  await expect(quadros).toHaveCount(Math.max(3, Math.ceil(n / 3) * 3));
+  await expect(page.locator("section#fotos li img")).toHaveCount(n);
+
+  for (let i = 0; i < n; i++) {
+    await expect(quadros.nth(i).locator("img")).toHaveAttribute("alt", disponiveis[i].alt);
+  }
+});
