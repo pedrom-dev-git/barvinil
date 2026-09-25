@@ -31,7 +31,7 @@ const HORARIOS = Array.from({ length: 48 }, (_, i) => {
 
 const campo =
   "min-h-12 w-full rounded-lg border border-areia/25 bg-musgo px-4 text-base text-areia " +
-  "placeholder:text-areia-suave focus:border-areia focus:outline-none";
+  "placeholder:text-areia-suave/50 focus:border-areia focus:outline-none";
 const rotulo = "font-display text-[0.7rem] uppercase tracking-marquise text-areia-suave";
 
 type Props = {
@@ -53,6 +53,7 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
   const [aberto, setAberto] = useState(false);
   const [hoje, setHoje] = useState<string>();
   const [data, setData] = useState("");
+  const [hora, setHora] = useState("");
   // Browsers without showPicker() get the plain native field instead.
   const [dataNativa, setDataNativa] = useState(false);
   const calendario = useRef<HTMLInputElement>(null);
@@ -192,14 +193,17 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
                     id={`${id}-hora`}
                     name="hora"
                     required
-                    defaultValue=""
-                    className={`${campo} cursor-pointer`}
+                    value={hora}
+                    onChange={(e) => setHora(e.target.value)}
+                    // The "--:--" hint is faded like a placeholder, so an untouched
+                    // select does not read as a time already chosen.
+                    className={`${campo} cursor-pointer ${hora ? "" : "text-areia-suave/50"}`}
                   >
                     <option value="" disabled>
                       --:--
                     </option>
                     {HORARIOS.map((h) => (
-                      <option key={h} value={h}>
+                      <option key={h} value={h} className="text-areia">
                         {h}
                       </option>
                     ))}
@@ -218,7 +222,6 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
                     min={1}
                     step={1}
                     required
-                    placeholder="2"
                     className={campo}
                   />
                 </div>
@@ -234,7 +237,6 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
                   type="text"
                   autoComplete="name"
                   required
-                  placeholder="Seu nome"
                   className={campo}
                 />
               </div>
