@@ -8,16 +8,17 @@
  * nenhum componente carrega hex solto.
  *
  * Padrão cromático (brandbook p.23):
- *   musgo        #1A2B2F  Musgo Urbano — fundo
+ *   musgo        #143325  fundo. O brandbook imprime #1A2B2F (Musgo Urbano); o
+ *                         verde #143325 foi definido pelo Pedro em 2026-09-25.
  *   areia        #FFEDD2  Areia Rosada — lettering, logotipo, botão preenchido
  *   argila       #CA6838  Argila Quente — só detalhe
- *   musgo-claro  #374343  e areia-suave #C6BCA9 saem da escala entre as duas
- *                         que o próprio brandbook imprime na mesma página.
+ *   musgo-claro  #2C4636  musgo 10% em direção à areia — painéis e molduras.
+ *   areia-suave  #C6BCA9  da escala que o brandbook imprime na mesma página.
  *
  * Contraste medido contra --color-musgo (RNF07 pede WCAG AA = 4,5:1):
- *   areia        ~12,8:1  texto corrido, títulos
- *   areia-suave   ~7,8:1  texto secundário e legendas
- *   argila        ~3,9:1  REPROVA para texto pequeno. Só em elemento não-textual
+ *   areia        ~12,0:1  texto corrido, títulos
+ *   areia-suave   ~7,3:1  texto secundário e legendas (~5,5:1 sobre musgo-claro)
+ *   argila        ~3,6:1  REPROVA para texto pequeno. Só em elemento não-textual
  *                         (borda, filete, ícone), onde o mínimo é 3:1. No brandbook
  *                         ela pinta o "(hi-fi bar)" — que aqui já vem dentro do PNG.
  *
@@ -30,8 +31,8 @@
  * ------------------------------------------------------------------------- */
 
 @theme {
-  --color-musgo: #1a2b2f;
-  --color-musgo-claro: #374343;
+  --color-musgo: #143325;
+  --color-musgo-claro: #2c4636;
   --color-areia: #ffedd2;
   --color-areia-suave: #c6bca9;
   --color-argila: #ca6838;
