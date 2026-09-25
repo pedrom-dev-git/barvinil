@@ -131,3 +131,36 @@ test("the open form has no WCAG A/AA violations", async ({ page }) => {
     violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target).join(" | ")}`),
   ).toEqual([]);
 });
+
+test.describe("opening motion", () => {
+  test.skip(!preenchido(site.whatsapp), "no phone number in content/site.ts");
+
+  /** Seconds of the longest transition on the panel. */
+  const duracao = (page: Page) =>
+    page
+      .locator("section#hero [data-painel-reserva]")
+      .evaluate((el) =>
+        Math.max(...getComputedStyle(el).transitionDuration.split(",").map((s) => parseFloat(s))),
+      );
+
+  test("the panel eases open instead of popping in", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: null });
+    await page.goto("/");
+    expect(await duracao(page)).toBeGreaterThanOrEqual(0.3);
+
+    // Still hidden from everyone while closed — sight, keyboard and screen readers.
+    const painel = page.locator("section#hero [data-painel-reserva]");
+    await expect(painel).toHaveAttribute("inert", "");
+    await expect(page.locator("section#hero").getByLabel(/nome/i)).toBeHidden();
+
+    await page.locator("section#hero").getByRole("button", { name: /reservar mesa/i }).click();
+    await expect(painel).not.toHaveAttribute("inert");
+    await expect(page.locator("section#hero").getByLabel(/nome/i)).toBeVisible();
+  });
+
+  test("and simply appears for anyone who asked for less motion", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    expect(await duracao(page)).toBeLessThan(0.05);
+  });
+});
