@@ -42,6 +42,9 @@
   --font-destaque: var(--fonte-destaque), cursive;
 
   --tracking-marquise: 0.3em;
+
+  /* Fast start, long soft landing — the booking panel settling into place. */
+  --ease-suave: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* A casa é escura por identidade, não por preferência do sistema. */
