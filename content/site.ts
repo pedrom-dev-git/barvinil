@@ -63,7 +63,10 @@ export const site = {
   } as Dado<string>,
 
   tagline: {
-    valor: "Onde o som e a gastronomia se encontram",
+    valor: "Onde o som e o sabor se encontram",
+    // Wording by Pedro (2026-09-25), from the bio.site line "Onde o som e a
+    // gastronomia se encontram" and the brandbook's "som + sabor + espaço".
+    // Still unconfirmed by the owner, so it stays `fonte-publica`.
     fonte: BIO_SITE,
     status: "fonte-publica",
   } as Dado<string>,
