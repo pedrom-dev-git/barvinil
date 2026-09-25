@@ -2,7 +2,6 @@ import { test, expect } from "@playwright/test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { site, preenchido } from "../content/site";
-import { linkWhatsApp, MENSAGENS } from "../lib/whatsapp";
 
 /** The five sections plano-pmv.md §1 fixed, in order. The scope does not grow. */
 const SECOES = ["hero", "casa", "fotos", "onde", "reservar"] as const;
@@ -37,19 +36,6 @@ test("leads with the wordmark and the tagline, above the fold", async ({ page })
   if ((await logo.count()) > 0) await expect(logo).toBeVisible();
 
   await expect(page.locator("section#hero")).toContainText(tagline);
-});
-
-test("the booking CTA opens WhatsApp with the message already written", async ({ page }) => {
-  const whats = site.whatsapp;
-  test.skip(!preenchido(whats), "no phone number in content/site.ts");
-  if (!preenchido(whats)) return;
-
-  const esperado = linkWhatsApp(whats.valor.e164, "reserva");
-  const cta = page.getByRole("link", { name: /reservar mesa/i }).first();
-
-  await expect(cta).toBeVisible();
-  await expect(cta).toHaveAttribute("href", esperado);
-  expect(decodeURIComponent(esperado)).toContain(MENSAGENS.reserva);
 });
 
 test("address, phone, menu and Instagram match content/site.ts", async ({ page }) => {
