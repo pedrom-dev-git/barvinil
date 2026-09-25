@@ -21,38 +21,38 @@ export function ACasa() {
     <section
       id="casa"
       aria-labelledby="casa-titulo"
-      className="border-t border-creme/10 px-6 py-20 sm:px-10 sm:py-28"
+      className="border-t border-areia/10 px-6 py-20 sm:px-10 sm:py-28"
     >
       <div className="mx-auto w-full max-w-md sm:max-w-2xl lg:max-w-4xl">
         {preenchido(site.posicionamento) && (
           <h2
             id="casa-titulo"
-            className="font-display text-[0.7rem] uppercase tracking-marquise text-creme-suave sm:text-xs"
+            className="font-display text-[0.7rem] uppercase tracking-marquise text-areia-suave sm:text-xs"
           >
             {site.posicionamento.valor}
           </h2>
         )}
 
         {preenchido(site.descricao) && (
-          <p className="mt-7 font-display text-[1.6rem] leading-[1.35] text-creme sm:text-3xl lg:text-4xl">
+          <p className="mt-7 font-display text-[1.6rem] leading-[1.35] text-areia sm:text-3xl lg:text-4xl">
             {site.descricao.valor}
           </p>
         )}
 
         {preenchido(site.historia) && (
-          <p className="mt-8 max-w-prose text-base leading-relaxed text-creme-suave">
+          <p className="mt-8 max-w-prose text-base leading-relaxed text-areia-suave">
             {site.historia.valor}
           </p>
         )}
 
         {cartoes.length > 0 && (
-          <dl className={`mt-14 grid gap-px overflow-hidden rounded-lg bg-creme/10 ${colunas}`}>
+          <dl className={`mt-14 grid gap-px overflow-hidden rounded-lg bg-areia/10 ${colunas}`}>
             {cartoes.map(({ chave, rotulo, dado }) => (
-              <div key={chave} className="bg-noite px-6 py-8">
-                <dt className="font-display text-[0.65rem] uppercase tracking-marquise text-creme-suave">
+              <div key={chave} className="bg-musgo px-6 py-8">
+                <dt className="font-display text-[0.65rem] uppercase tracking-marquise text-areia-suave">
                   {rotulo}
                 </dt>
-                <dd className="mt-3 text-base leading-relaxed text-creme">
+                <dd className="mt-3 text-base leading-relaxed text-areia">
                   {dado.valor}
                 </dd>
               </div>

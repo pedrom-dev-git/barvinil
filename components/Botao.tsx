@@ -26,8 +26,8 @@ export function Botao({
 
   const estilo =
     variante === "cheio"
-      ? "bg-creme text-noite hover:bg-white"
-      : "border border-creme/35 text-creme hover:border-creme hover:bg-creme/5";
+      ? "bg-areia text-musgo hover:bg-areia-suave"
+      : "border border-areia/35 text-areia hover:border-argila hover:bg-areia/5";
 
   return (
     <a

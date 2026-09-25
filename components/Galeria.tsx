@@ -24,12 +24,12 @@ export function Galeria() {
     <section
       id="fotos"
       aria-labelledby="fotos-titulo"
-      className="border-t border-creme/10 px-6 py-20 sm:px-10 sm:py-28"
+      className="border-t border-areia/10 px-6 py-20 sm:px-10 sm:py-28"
     >
       <div className="mx-auto w-full max-w-md sm:max-w-2xl lg:max-w-6xl">
         <h2
           id="fotos-titulo"
-          className="font-display text-[0.7rem] uppercase tracking-marquise text-creme-suave sm:text-xs"
+          className="font-display text-[0.7rem] uppercase tracking-marquise text-areia-suave sm:text-xs"
         >
           O espaço
         </h2>
@@ -49,7 +49,7 @@ export function Galeria() {
           {fotos.map((foto) => (
             <li
               key={foto.id}
-              className="relative aspect-4/5 w-56 shrink-0 snap-start overflow-hidden rounded-lg border border-creme/10 bg-carvao sm:w-auto"
+              className="relative aspect-4/5 w-56 shrink-0 snap-start overflow-hidden rounded-lg border border-areia/10 bg-musgo-claro sm:w-auto"
             >
               {foto.arquivo ? (
                 <Image
@@ -60,7 +60,7 @@ export function Galeria() {
                   className="object-cover"
                 />
               ) : (
-                <Sulcos className="absolute left-1/2 top-1/2 h-[78%] w-[78%] -translate-x-1/2 -translate-y-1/2 text-creme opacity-[0.22]" />
+                <Sulcos className="absolute left-1/2 top-1/2 h-[78%] w-[78%] -translate-x-1/2 -translate-y-1/2 text-areia opacity-[0.22]" />
               )}
             </li>
           ))}

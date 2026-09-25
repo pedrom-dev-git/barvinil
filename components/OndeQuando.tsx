@@ -36,12 +36,12 @@ export function OndeQuando() {
     <section
       id="onde"
       aria-labelledby="onde-titulo"
-      className="border-t border-creme/10 px-6 py-20 sm:px-10 sm:py-28"
+      className="border-t border-areia/10 px-6 py-20 sm:px-10 sm:py-28"
     >
       <div className="mx-auto w-full max-w-md sm:max-w-2xl lg:max-w-4xl">
         <h2
           id="onde-titulo"
-          className="font-display text-[0.7rem] uppercase tracking-marquise text-creme-suave sm:text-xs"
+          className="font-display text-[0.7rem] uppercase tracking-marquise text-areia-suave sm:text-xs"
         >
           Onde e quando
         </h2>
@@ -50,18 +50,18 @@ export function OndeQuando() {
           <div>
             {e && (
               <address className="not-italic">
-                <p className="font-display text-2xl leading-tight text-creme sm:text-3xl">
+                <p className="font-display text-2xl leading-tight text-areia sm:text-3xl">
                   {e.logradouro}
                 </p>
-                <p className="mt-2 text-base text-creme-suave">
+                <p className="mt-2 text-base text-areia-suave">
                   {e.bairro} · {e.cidade}-{e.uf}
                 </p>
-                <p className="text-base text-creme-suave">CEP {e.cep}</p>
+                <p className="text-base text-areia-suave">CEP {e.cep}</p>
               </address>
             )}
 
             {preenchido(site.horarioResumo) && (
-              <p className="mt-6 font-display text-[0.7rem] uppercase tracking-marquise text-creme-suave">
+              <p className="mt-6 font-display text-[0.7rem] uppercase tracking-marquise text-areia-suave">
                 {site.horarioResumo.valor}
               </p>
             )}
@@ -71,7 +71,7 @@ export function OndeQuando() {
                 href={e.mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-7 inline-flex min-h-12 items-center rounded-full border border-creme/35 px-7 font-display text-sm uppercase tracking-[0.18em] text-creme transition-colors duration-200 hover:border-creme hover:bg-creme/5"
+                className="mt-7 inline-flex min-h-12 items-center rounded-full border border-areia/35 px-7 font-display text-sm uppercase tracking-[0.18em] text-areia transition-colors duration-200 hover:border-areia hover:bg-areia/5"
               >
                 Como chegar
               </a>
@@ -79,19 +79,19 @@ export function OndeQuando() {
           </div>
 
           {linhas.length > 0 && (
-            <ul className="divide-y divide-creme/10 border-y border-creme/10">
+            <ul className="divide-y divide-areia/10 border-y border-areia/10">
               {linhas.map((l) => (
                 <li key={l.rotulo}>
                   <a
                     href={l.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex min-h-14 items-center justify-between gap-4 py-4 transition-colors duration-200 hover:text-creme-suave"
+                    className="flex min-h-14 items-center justify-between gap-4 py-4 transition-colors duration-200 hover:text-areia-suave"
                   >
-                    <span className="font-display text-[0.65rem] uppercase tracking-marquise text-creme-suave">
+                    <span className="font-display text-[0.65rem] uppercase tracking-marquise text-areia-suave">
                       {l.rotulo}
                     </span>
-                    <span className="text-base text-creme">{l.texto}</span>
+                    <span className="text-base text-areia">{l.texto}</span>
                   </a>
                 </li>
               ))}

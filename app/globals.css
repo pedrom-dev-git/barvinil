@@ -1,41 +1,44 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
- * PROPOSTA INICIAL DE IDENTIDADE — trocável.
+ * IDENTIDADE OFICIAL — BrandBook VINIL25 (Poli Branding, by Kika Mattos).
  *
- * O item 7 do template (interfaces, paleta, tipografia) é entregável assinado
- * pela Duda, do Design Gráfico. Isto é ponto de partida para ela editar, não
- * decisão fechada: toda cor e toda fonte vivem NESTE bloco. Nenhum componente
- * carrega hex solto — trocar a identidade inteira é editar este arquivo.
+ * Entregue pelo dono em 2026-09-25. Substitui o creme sobre preto que tinha sido
+ * deduzido só do PNG do logo. Toda cor e toda fonte continuam vivendo NESTE bloco:
+ * nenhum componente carrega hex solto.
  *
- * A paleta não foi inventada: saiu do logotipo que o dono forneceu.
- *   - `public/logo-vinil.png` é monocromático, uma cor sólida só: #E5DAC6.
- *   - O bar se apresenta em preto (informado pelo Rei em 2026-09-04).
- * Então o sistema é de DUAS cores — creme sobre preto — e nada além disso.
- * Nenhum terceiro tom foi acrescentado: a marca é monocromática e a página
- * respeita isso. Se a Duda quiser um acento, ele nasce aqui.
+ * Padrão cromático (brandbook p.23):
+ *   musgo        #1A2B2F  Musgo Urbano — fundo
+ *   areia        #FFEDD2  Areia Rosada — lettering, logotipo, botão preenchido
+ *   argila       #CA6838  Argila Quente — só detalhe
+ *   musgo-claro  #374343  e areia-suave #C6BCA9 saem da escala entre as duas
+ *                         que o próprio brandbook imprime na mesma página.
  *
- * Contraste medido contra --color-noite (RNF07 pede WCAG AA = 4,5:1):
- *   creme       #E5DAC6  ~15,4:1  texto corrido, logotipo, botão preenchido
- *   creme-suave #A2977F   ~6,9:1  texto secundário e legendas
- *   noite sobre creme (texto do botão preenchido)  ~15,4:1
+ * Contraste medido contra --color-musgo (RNF07 pede WCAG AA = 4,5:1):
+ *   areia        ~12,8:1  texto corrido, títulos
+ *   areia-suave   ~7,8:1  texto secundário e legendas
+ *   argila        ~3,9:1  REPROVA para texto pequeno. Só em elemento não-textual
+ *                         (borda, filete, ícone), onde o mínimo é 3:1. No brandbook
+ *                         ela pinta o "(hi-fi bar)" — que aqui já vem dentro do PNG.
  *
- * Tipografia: o wordmark é uma sans geométrica em caixa baixa, com pingos
- * circulares e terminais retos — e o "v" abre num traço que sobe como o braço
- * de um toca-discos. Jost é a geométrica de código aberto mais próxima disso,
- * então os títulos parecem extensão do logotipo em vez de brigar com ele.
- * ⚠️ A fonte REAL do logotipo é desconhecida — perguntar a quem o desenhou.
+ * Tipografia (p.24–25): Gorga Grotesque para texto corrido, descritivo e contato;
+ * Dancing Script para "chamadas ou palavras que exijam destaque" — com parcimônia,
+ * o brandbook avisa: "CUIDE COM O EXCESSO".
+ * ⚠️ Gorga Grotesque é © 2019 Adam Fathony, "All rights reserved", e vai pública
+ * no Pages. Embutida por decisão do Rei; licença de webfont a confirmar com a
+ * agência — ver ASSETS.md.
  * ------------------------------------------------------------------------- */
 
 @theme {
-  --color-noite: #0b0a09;
-  --color-carvao: #15130f;
-  --color-carvao-claro: #211d18;
-  --color-creme: #e5dac6;
-  --color-creme-suave: #a2977f;
+  --color-musgo: #1a2b2f;
+  --color-musgo-claro: #374343;
+  --color-areia: #ffedd2;
+  --color-areia-suave: #c6bca9;
+  --color-argila: #ca6838;
 
-  --font-display: var(--fonte-display), "Futura", "Century Gothic", sans-serif;
-  --font-body: var(--fonte-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--fonte-gorga), "Helvetica Neue", Arial, sans-serif;
+  --font-body: var(--fonte-gorga), ui-sans-serif, system-ui, sans-serif;
+  --font-destaque: var(--fonte-destaque), cursive;
 
   --tracking-marquise: 0.3em;
 }
@@ -46,15 +49,15 @@
 }
 
 body {
-  background-color: var(--color-noite);
-  color: var(--color-creme);
+  background-color: var(--color-musgo);
+  color: var(--color-areia);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
 }
 
 /* Foco sempre visível — navegação por teclado é RNF07. */
 :focus-visible {
-  outline: 2px solid var(--color-creme);
+  outline: 2px solid var(--color-areia);
   outline-offset: 3px;
   border-radius: 2px;
 }

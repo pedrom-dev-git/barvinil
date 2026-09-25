@@ -16,8 +16,7 @@ export function Hero() {
 
   // Server component, so this is a build-time check. The logo file is deliberately
   // not in the repository (it is the bar's trademark), so the page has to stand up
-  // without it — the name is set in type instead. Jost is close enough to the
-  // wordmark that the fallback reads as the brand rather than as a broken image.
+  // without it — the name is set in type instead, in the brand's Gorga Grotesque.
   const temLogo =
     preenchido(site.logotipo) &&
     existsSync(join(process.cwd(), "public", site.logotipo.valor));
@@ -31,7 +30,7 @@ export function Hero() {
       className="grao relative flex min-h-[100svh] flex-col justify-center overflow-hidden px-6 py-24 sm:px-10"
     >
       {/* The record sits off the right edge on a phone and centres as the page widens. */}
-      <Sulcos className="gira pointer-events-none absolute -right-1/3 top-1/2 h-[130vw] w-[130vw] -translate-y-1/2 text-creme opacity-[0.09] sm:-right-[10%] sm:h-[85vh] sm:w-[85vh] lg:right-[6%]" />
+      <Sulcos className="gira pointer-events-none absolute -right-1/3 top-1/2 h-[130vw] w-[130vw] -translate-y-1/2 text-areia opacity-[0.09] sm:-right-[10%] sm:h-[85vh] sm:w-[85vh] lg:right-[6%]" />
 
       <div className="relative z-10 mx-auto w-full max-w-md sm:max-w-2xl lg:max-w-4xl">
         <h1 className="mb-7">
@@ -39,24 +38,25 @@ export function Hero() {
             <Image
               src={asset(`/${site.logotipo.valor}`)}
               alt={nome}
-              width={948}
-              height={336}
+              width={1961}
+              height={890}
               priority
               className="h-auto w-52 sm:w-72 lg:w-96"
             />
           ) : (
-            <span className="block font-display text-6xl lowercase leading-none tracking-tight text-creme sm:text-8xl lg:text-9xl">
+            <span className="block font-display text-6xl lowercase leading-none tracking-tight text-areia sm:text-8xl lg:text-9xl">
               vinil
             </span>
           )}
         </h1>
 
-        <p className="font-display text-[0.7rem] uppercase tracking-marquise text-creme-suave sm:text-xs">
-          hi-fi bar{cidade ? ` · ${cidade}` : ""}
+        <p className="font-display text-[0.7rem] uppercase tracking-marquise text-areia-suave sm:text-xs">
+          {/* The official lockup already reads "(hi-fi bar)" under the name. */}
+          {temLogo ? cidade : `hi-fi bar${cidade ? ` · ${cidade}` : ""}`}
         </p>
 
         {preenchido(site.tagline) && (
-          <p className="mt-6 max-w-lg font-display text-2xl leading-[1.25] text-creme sm:text-4xl lg:text-5xl">
+          <p className="mt-6 max-w-lg font-destaque text-3xl leading-[1.2] text-areia sm:text-5xl lg:text-6xl">
             {site.tagline.valor}
           </p>
         )}

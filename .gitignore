@@ -15,6 +15,7 @@ blob-report/
 # Marca e fotos do bar — propriedade da casa, não nossas para publicar.
 # O site funciona sem elas (ver README, seção "Assets da marca").
 /public/logo-vinil.png
+/public/icon.png
 /public/fotos/*
 !/public/fotos/.gitkeep
 
