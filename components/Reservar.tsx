@@ -1,15 +1,14 @@
 import { site, preenchido } from "@/content/site";
-import { linkWhatsApp } from "@/lib/whatsapp";
-import { Botao } from "./Botao";
+import { FormReserva } from "./FormReserva";
 import { Sulcos } from "./Sulcos";
 
 /**
- * Step 1 of the ladder alternativas-de-mercado.md settled on: the CTA opens WhatsApp
- * with the message already written. It works from day one, costs nothing, and does
- * not fight the channel the house already uses.
+ * Step 1 of the ladder alternativas-de-mercado.md settled on: the CTA opens a short
+ * form whose answers go to WhatsApp as a booking already written. It works from day
+ * one, costs nothing, and does not fight the channel the house already uses.
  *
- * When UC02 ships, this button points at /reservar instead — and the panel keeps
- * absorbing WhatsApp bookings through UC07, so the helper stays either way.
+ * When UC02 ships, this points at /reservar instead — and the panel keeps absorbing
+ * WhatsApp bookings through UC07, so the helpers stay either way.
  */
 export function Reservar() {
   const w = preenchido(site.whatsapp) ? site.whatsapp.valor : null;
@@ -30,20 +29,10 @@ export function Reservar() {
           Reservar mesa
         </h2>
         <p className="mx-auto mt-5 max-w-sm text-base leading-relaxed text-areia-suave">
-          Diga o dia, o horário e quantas pessoas. A gente confirma pelo WhatsApp.
+          Escolha o dia, quantas pessoas e em nome de quem. A gente confirma pelo WhatsApp.
         </p>
 
-        {w && (
-          <div className="mt-10 flex justify-center">
-            <Botao
-              href={linkWhatsApp(w.e164, "reserva")}
-              variante="cheio"
-              externo
-            >
-              Reservar mesa
-            </Botao>
-          </div>
-        )}
+        {w && <FormReserva e164={w.e164} alinhar="centro" className="mt-10" />}
       </div>
     </section>
   );

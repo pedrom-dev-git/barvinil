@@ -2,9 +2,9 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import Image from "next/image";
 import { site, preenchido } from "@/content/site";
-import { linkWhatsApp } from "@/lib/whatsapp";
 import { asset } from "@/lib/asset";
 import { Botao } from "./Botao";
+import { FormReserva } from "./FormReserva";
 import { Sulcos } from "./Sulcos";
 
 /**
@@ -23,6 +23,12 @@ export function Hero() {
   const cidade = preenchido(site.endereco)
     ? `${site.endereco.valor.cidade} · ${site.endereco.valor.uf}`
     : null;
+
+  const cardapio = preenchido(site.cardapio) ? (
+    <Botao href={site.cardapio.valor} externo>
+      Ver cardápio
+    </Botao>
+  ) : null;
 
   return (
     <section
@@ -61,22 +67,11 @@ export function Hero() {
           </p>
         )}
 
-        <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
-          {preenchido(site.whatsapp) && (
-            <Botao
-              href={linkWhatsApp(site.whatsapp.valor.e164, "reserva")}
-              variante="cheio"
-              externo
-            >
-              Reservar mesa
-            </Botao>
-          )}
-          {preenchido(site.cardapio) && (
-            <Botao href={site.cardapio.valor} externo>
-              Ver cardápio
-            </Botao>
-          )}
-        </div>
+        {preenchido(site.whatsapp) ? (
+          <FormReserva e164={site.whatsapp.valor.e164} aoLado={cardapio} className="mt-10" />
+        ) : (
+          cardapio && <div className="mt-10 flex flex-col sm:flex-row">{cardapio}</div>
+        )}
       </div>
     </section>
   );
