@@ -153,9 +153,10 @@ test("the page says it is a class prototype, not the house's official site", asy
 
 test("wears the official brandbook palette: Areia Rosada on Musgo Urbano", async ({ page }) => {
   // BrandBook_VINIL25 p.23, delivered by the owner on 2026-09-25. It replaces the
-  // cream-on-black that had been inferred from the logo PNG alone.
+  // cream-on-black that had been inferred from the logo PNG alone. The green was
+  // then set to #143325 by Pedro on 2026-09-25, over the book's #1A2B2F.
   const body = page.locator("body");
-  await expect(body).toHaveCSS("background-color", "rgb(26, 43, 47)");
+  await expect(body).toHaveCSS("background-color", "rgb(20, 51, 37)");
   await expect(body).toHaveCSS("color", "rgb(255, 237, 210)");
 });
 
