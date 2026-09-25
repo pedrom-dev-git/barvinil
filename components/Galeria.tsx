@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import Image from "next/image";
 import { site } from "@/content/site";
 import { asset } from "@/lib/asset";
@@ -13,12 +15,20 @@ import { Sulcos } from "./Sulcos";
  */
 export function Galeria() {
   const todas = site.fotos.valor ?? [];
-  const temFoto = todas.some((f) => f.arquivo !== null);
 
-  // Six empty frames read as a hole in the page. While the house still owes us
-  // photos, show one row of three: enough to say "photos go here", not enough to
-  // turn the section into a void. All six come back the moment one arrives.
-  const fotos = temFoto ? todas : todas.slice(0, 3);
+  // Server component, so this is a build-time check. Photos are the house's and stay
+  // out of git: a slot can name a file this checkout does not have (the deploy, for
+  // one), and that slot has to stay an empty frame rather than a broken image.
+  const temArquivo = (arquivo: string | null): arquivo is string =>
+    arquivo !== null && existsSync(join(process.cwd(), "public", "fotos", arquivo));
+
+  // Photos first, then empty frames only up to the end of the row of three. Six
+  // frames with two photos read as a page still under construction; a full row
+  // reads as a gallery. Never fewer than three, so the section says "photos go here".
+  const comFoto = todas.filter((f) => temArquivo(f.arquivo));
+  const vazios = todas.filter((f) => !temArquivo(f.arquivo));
+  const total = Math.max(3, Math.ceil(comFoto.length / 3) * 3);
+  const fotos = [...comFoto, ...vazios].slice(0, total);
 
   return (
     <section
@@ -51,7 +61,7 @@ export function Galeria() {
               key={foto.id}
               className="relative aspect-4/5 w-56 shrink-0 snap-start overflow-hidden rounded-lg border border-areia/10 bg-musgo-claro sm:w-auto"
             >
-              {foto.arquivo ? (
+              {temArquivo(foto.arquivo) ? (
                 <Image
                   src={asset(`/fotos/${foto.arquivo}`)}
                   alt={foto.alt}
