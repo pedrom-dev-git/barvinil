@@ -19,6 +19,8 @@ const MENSAGENS: Record<MensagemPronta, string> = {
 export type PedidoReserva = {
   /** YYYY-MM-DD, as an <input type="date"> reports it */
   data: string;
+  /** HH:MM, 24h */
+  hora: string;
   pessoas: number;
   nome: string;
 };
@@ -26,12 +28,12 @@ export type PedidoReserva = {
 const apenasDigitos = (e164: string) => e164.replace(/\D/g, "");
 
 /** The booking as the house reads it in WhatsApp. */
-export function mensagemReserva({ data, pessoas, nome }: PedidoReserva): string {
+export function mensagemReserva({ data, hora, pessoas, nome }: PedidoReserva): string {
   const [ano, mes, dia] = data.split("-");
   const quantas = `${pessoas} ${pessoas === 1 ? "pessoa" : "pessoas"}`;
   return (
     `Oi! Gostaria de reservar uma mesa no Vinil para ${quantas} ` +
-    `no dia ${dia}/${mes}/${ano}, em nome de ${nome.trim()}.`
+    `no dia ${dia}/${mes}/${ano} às ${hora}, em nome de ${nome.trim()}.`
   );
 }
 

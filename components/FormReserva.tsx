@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
+import { useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
 import { linkReserva } from "@/lib/whatsapp";
 import { classeBotao } from "./Botao";
 
@@ -12,14 +12,22 @@ function hojeLocal(): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-/** The whole field opens the calendar, not just the small icon at its edge. */
-function abrirCalendario(e: MouseEvent<HTMLInputElement>) {
-  try {
-    e.currentTarget.showPicker();
-  } catch {
-    // Older browsers: the native control still works on its own.
-  }
+/** "2026-10-09" → "09/10/2026 · sexta-feira" — pt-BR whatever the browser's locale. */
+function dataPorExtenso(iso: string): string {
+  const [ano, mes, dia] = iso.split("-").map(Number);
+  const semana = new Intl.DateTimeFormat("pt-BR", { weekday: "long" }).format(
+    new Date(ano, mes - 1, dia),
+  );
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(dia)}/${p(mes)}/${ano} · ${semana}`;
 }
+
+/** Every half hour, 24h. The house's opening hours are not confirmed yet
+ * (site.horarioDetalhado is `a-preencher`); once they are, the slots come from it. */
+const HORARIOS = Array.from({ length: 48 }, (_, i) => {
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${p(Math.floor(i / 2))}:${i % 2 ? "30" : "00"}`;
+});
 
 const campo =
   "min-h-12 w-full rounded-lg border border-areia/25 bg-musgo px-4 text-base text-areia " +
@@ -35,7 +43,7 @@ type Props = {
 };
 
 /**
- * "Reservar mesa" opens this form — date, party size, name — and sending it opens
+ * "Reservar mesa" opens this form — date, time, party size, name — and sending it opens
  * WhatsApp with the booking already written. Same pattern as the R. Amaral landing.
  * Nothing is stored: the house confirms by hand (step 1 of the ladder in
  * alternativas-de-mercado.md, until UC02 exists).
@@ -44,6 +52,27 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
   const id = useId();
   const [aberto, setAberto] = useState(false);
   const [hoje, setHoje] = useState<string>();
+  const [data, setData] = useState("");
+  // Browsers without showPicker() get the plain native field instead.
+  const [dataNativa, setDataNativa] = useState(false);
+  const calendario = useRef<HTMLInputElement>(null);
+
+  // A native <input type="date"> is drawn in the browser's locale — mm/dd/yyyy on
+  // an English system. So the calendar stays native, but the field the guest sees
+  // is ours and always reads in pt-BR.
+  function abrirCalendario() {
+    try {
+      calendario.current?.showPicker();
+    } catch {
+      setDataNativa(true);
+    }
+  }
+
+  function teclaNaData(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Tab") return;
+    e.preventDefault();
+    if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") abrirCalendario();
+  }
 
   function alternar() {
     setHoje(hojeLocal());
@@ -58,6 +87,7 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
     const dados = new FormData(form);
     const url = linkReserva(e164, {
       data: String(dados.get("data")),
+      hora: String(dados.get("hora")),
       pessoas: Number(dados.get("pessoas")),
       nome: String(dados.get("nome")),
     });
@@ -106,36 +136,92 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
               onSubmit={enviar}
               className="flex w-full flex-col gap-5 rounded-2xl border border-areia/10 bg-musgo-claro p-6 sm:w-96"
             >
-              <div className="flex flex-col gap-2">
+              <div className="relative flex flex-col gap-2">
                 <label htmlFor={`${id}-data`} className={rotulo}>
                   Data
                 </label>
-                <input
-                  id={`${id}-data`}
-                  name="data"
-                  type="date"
-                  required
-                  min={hoje}
-                  onClick={abrirCalendario}
-                  className={`${campo} cursor-pointer`}
-                />
+                {dataNativa ? (
+                  <input
+                    id={`${id}-data`}
+                    name="data"
+                    type="date"
+                    required
+                    min={hoje}
+                    value={data}
+                    onChange={(e) => setData(e.target.value)}
+                    className={campo}
+                  />
+                ) : (
+                  <>
+                    <input
+                      id={`${id}-data`}
+                      type="text"
+                      inputMode="none"
+                      autoComplete="off"
+                      required
+                      placeholder="DD/MM/AAAA"
+                      value={data ? dataPorExtenso(data) : ""}
+                      onChange={() => {}}
+                      onClick={abrirCalendario}
+                      onKeyDown={teclaNaData}
+                      className={`${campo} cursor-pointer caret-transparent`}
+                    />
+                    {/* The real value, and the calendar's anchor. Out of the tab order
+                        and the accessibility tree: the field above speaks for it. */}
+                    <input
+                      ref={calendario}
+                      name="data"
+                      type="date"
+                      min={hoje}
+                      value={data}
+                      onChange={(e) => setData(e.target.value)}
+                      tabIndex={-1}
+                      aria-hidden="true"
+                      className="pointer-events-none absolute bottom-0 left-4 h-px w-px opacity-0"
+                    />
+                  </>
+                )}
               </div>
 
-              <div className="flex flex-col gap-2">
-                <label htmlFor={`${id}-pessoas`} className={rotulo}>
-                  Pessoas
-                </label>
-                <input
-                  id={`${id}-pessoas`}
-                  name="pessoas"
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  step={1}
-                  required
-                  placeholder="2"
-                  className={campo}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <label htmlFor={`${id}-hora`} className={rotulo}>
+                    Hora
+                  </label>
+                  <select
+                    id={`${id}-hora`}
+                    name="hora"
+                    required
+                    defaultValue=""
+                    className={`${campo} cursor-pointer`}
+                  >
+                    <option value="" disabled>
+                      --:--
+                    </option>
+                    {HORARIOS.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <label htmlFor={`${id}-pessoas`} className={rotulo}>
+                    Pessoas
+                  </label>
+                  <input
+                    id={`${id}-pessoas`}
+                    name="pessoas"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    step={1}
+                    required
+                    placeholder="2"
+                    className={campo}
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col gap-2">
