@@ -118,6 +118,26 @@ for (const { secao, onde } of CTAS) {
       expect(await abertos(page)).toEqual([]);
     });
 
+    test("an empty field never looks filled in", async ({ page }) => {
+      // A sample value ("2", "Seu nome") in the placeholder read as an answer
+      // already given. Only format hints stay, and they are faded.
+      const s = page.locator(onde);
+      await s.getByRole("button", { name: /reservar mesa/i }).click();
+      await expect(s.getByLabel(/pessoas/i)).not.toHaveAttribute("placeholder", /.+/);
+      await expect(s.getByLabel(/nome/i)).not.toHaveAttribute("placeholder", /.+/);
+
+      const opaco = (el: Element) => {
+        const m = getComputedStyle(el, "::placeholder").color.match(/[\d.]+/g) ?? [];
+        return m.length === 4 ? Number(m[3]) : 1;
+      };
+      expect(await s.getByLabel(/data/i).evaluate(opaco)).toBeLessThanOrEqual(0.6);
+
+      const hora = s.getByLabel(/hora/i);
+      const corVazia = await hora.evaluate((el) => getComputedStyle(el).color);
+      await hora.selectOption("20:30");
+      expect(await hora.evaluate((el) => getComputedStyle(el).color)).not.toBe(corVazia);
+    });
+
     test("times are 24h, pt-BR style, never AM/PM", async ({ page }) => {
       const s = page.locator(onde);
       await s.getByRole("button", { name: /reservar mesa/i }).click();
