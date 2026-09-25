@@ -38,26 +38,28 @@ const abertos = (page: Page) =>
   page.evaluate(() => (window as unknown as { __abertos: string[] }).__abertos);
 
 test.describe("message", () => {
-  test("writes date as DD/MM/AAAA, party size and the name", () => {
-    expect(mensagemReserva({ data: "2026-10-09", pessoas: 4, nome: "Pedro" })).toBe(
-      "Oi! Gostaria de reservar uma mesa no Vinil para 4 pessoas no dia 09/10/2026, em nome de Pedro.",
+  test("writes date as DD/MM/AAAA, the time, party size and the name", () => {
+    expect(
+      mensagemReserva({ data: "2026-10-09", hora: "20:30", pessoas: 4, nome: "Pedro" }),
+    ).toBe(
+      "Oi! Gostaria de reservar uma mesa no Vinil para 4 pessoas no dia 09/10/2026 às 20:30, em nome de Pedro.",
     );
   });
 
   test("says 1 pessoa, not 1 pessoas", () => {
-    expect(mensagemReserva({ data: "2026-10-09", pessoas: 1, nome: "Ana" })).toContain(
+    expect(mensagemReserva({ data: "2026-10-09", hora: "19:00", pessoas: 1, nome: "Ana" })).toContain(
       "para 1 pessoa no dia",
     );
   });
 
   test("trims the name", () => {
-    expect(mensagemReserva({ data: "2026-10-09", pessoas: 2, nome: "  Ana  " })).toContain(
+    expect(mensagemReserva({ data: "2026-10-09", hora: "19:00", pessoas: 2, nome: "  Ana  " })).toContain(
       "em nome de Ana.",
     );
   });
 
   test("the link is wa.me with the message encoded", () => {
-    const pedido = { data: "2026-10-09", pessoas: 2, nome: "Ana" };
+    const pedido = { data: "2026-10-09", hora: "19:00", pessoas: 2, nome: "Ana" };
     expect(linkReserva("+55 (51) 99442-4243", pedido)).toBe(
       `https://wa.me/5551994424243?text=${encodeURIComponent(mensagemReserva(pedido))}`,
     );
@@ -81,6 +83,7 @@ for (const { secao, onde } of CTAS) {
       await botao.click();
       await expect(botao).toHaveAttribute("aria-expanded", "true");
       await expect(page.locator(onde).getByLabel(/data/i)).toBeVisible();
+      await expect(page.locator(onde).getByLabel(/hora/i)).toBeVisible();
       await expect(page.locator(onde).getByLabel(/pessoas/i)).toBeVisible();
       await expect(page.locator(onde).getByLabel(/nome/i)).toBeVisible();
     });
@@ -90,14 +93,19 @@ for (const { secao, onde } of CTAS) {
       const s = page.locator(onde);
       await s.getByRole("button", { name: /reservar mesa/i }).click();
 
+      // The calendar is the browser's own; the field shows its answer in pt-BR.
       const data = isoLocal(3);
-      await s.getByLabel(/data/i).fill(data);
+      await s.locator('input[type="date"]').fill(data);
+      const [ano, mes, dia] = data.split("-");
+      await expect(s.getByLabel(/data/i)).toHaveValue(new RegExp(`^${dia}/${mes}/${ano}`));
+
+      await s.getByLabel(/hora/i).selectOption("20:30");
       await s.getByLabel(/pessoas/i).fill("4");
       await s.getByLabel(/nome/i).fill("Pedro");
       await s.getByRole("button", { name: /enviar/i }).click();
 
       expect(await abertos(page)).toEqual([
-        linkReserva(site.whatsapp.valor.e164, { data, pessoas: 4, nome: "Pedro" }),
+        linkReserva(site.whatsapp.valor.e164, { data, hora: "20:30", pessoas: 4, nome: "Pedro" }),
       ]);
     });
 
@@ -110,10 +118,21 @@ for (const { secao, onde } of CTAS) {
       expect(await abertos(page)).toEqual([]);
     });
 
+    test("times are 24h, pt-BR style, never AM/PM", async ({ page }) => {
+      const s = page.locator(onde);
+      await s.getByRole("button", { name: /reservar mesa/i }).click();
+      const horas = await s
+        .getByLabel(/hora/i)
+        .locator("option:not([value=''])")
+        .evaluateAll((os) => os.map((o) => o.textContent ?? ""));
+      expect(horas.length).toBeGreaterThan(0);
+      for (const h of horas) expect(h).toMatch(/^([01]\d|2[0-3]):[0-5]\d$/);
+    });
+
     test("does not offer a date in the past", async ({ page }) => {
       const s = page.locator(onde);
       await s.getByRole("button", { name: /reservar mesa/i }).click();
-      await expect(s.getByLabel(/data/i)).toHaveAttribute("min", isoLocal(0));
+      await expect(s.locator('input[type="date"]')).toHaveAttribute("min", isoLocal(0));
       await expect(s.getByLabel(/pessoas/i)).toHaveAttribute("min", "1");
     });
   });
