@@ -79,7 +79,7 @@ export function OndeQuando() {
           </div>
 
           {linhas.length > 0 && (
-            <ul className="divide-y divide-areia/10 border-y border-areia/10">
+            <ul className="divide-y divide-areia/10 self-start border-y border-areia/10">
               {linhas.map((l) => (
                 <li key={l.rotulo}>
                   <a

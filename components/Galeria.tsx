@@ -36,7 +36,7 @@ export function Galeria() {
       aria-labelledby="fotos-titulo"
       className="border-t border-areia/10 px-6 py-20 sm:px-10 sm:py-28"
     >
-      <div className="mx-auto w-full max-w-md sm:max-w-2xl lg:max-w-6xl">
+      <div className="mx-auto w-full max-w-md sm:max-w-2xl lg:max-w-4xl">
         <h2
           id="fotos-titulo"
           className="font-display text-[0.7rem] uppercase tracking-marquise text-areia-suave sm:text-xs"

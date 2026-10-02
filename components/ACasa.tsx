@@ -14,7 +14,9 @@ export function ACasa() {
   ].filter(({ dado }) => preenchido(dado));
 
   // Cards disappear as long as the owner has not approved their copy, so the column
-  // count follows what is left instead of leaving a hole in a fixed 3-up grid.
+  // count follows what is left instead of leaving a hole in a fixed 3-up grid. They
+  // are separated by rules, not boxed: a box filled with the page colour shows only
+  // its padding, and reads as a stray indent.
   const colunas = cartoes.length >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2";
 
   return (
@@ -46,9 +48,11 @@ export function ACasa() {
         )}
 
         {cartoes.length > 0 && (
-          <dl className={`mt-14 grid gap-px overflow-hidden rounded-lg bg-areia/10 ${colunas}`}>
+          <dl
+            className={`mt-14 grid divide-y divide-areia/10 sm:divide-x sm:divide-y-0 ${colunas}`}
+          >
             {cartoes.map(({ chave, rotulo, dado }) => (
-              <div key={chave} className="bg-musgo px-6 py-8">
+              <div key={chave} className="py-8 first:pt-0 sm:px-8 sm:py-0 sm:first:pl-0">
                 <dt className="font-display text-[0.65rem] uppercase tracking-marquise text-areia-suave">
                   {rotulo}
                 </dt>

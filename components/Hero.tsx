@@ -30,10 +30,12 @@ export function Hero() {
     </Botao>
   ) : null;
 
+  // Full height only from sm up. On a phone a full-height hero with centred content
+  // left blank bands above and below, and nothing said the page went on.
   return (
     <section
       id="hero"
-      className="grao relative flex min-h-[100svh] flex-col justify-center overflow-hidden px-6 py-24 sm:px-10"
+      className="grao relative flex flex-col justify-center overflow-hidden px-6 pt-24 pb-20 sm:min-h-[100svh] sm:px-10 sm:py-24"
     >
       {/* The record sits off the right edge on a phone and centres as the page widens. */}
       <Sulcos className="gira pointer-events-none absolute -right-1/3 top-1/2 h-[130vw] w-[130vw] -translate-y-1/2 text-areia opacity-[0.09] sm:-right-[10%] sm:h-[85vh] sm:w-[85vh] lg:right-[6%]" />
@@ -62,7 +64,7 @@ export function Hero() {
         </p>
 
         {preenchido(site.tagline) && (
-          <p className="mt-6 max-w-lg font-destaque text-3xl leading-[1.2] text-areia sm:text-5xl lg:text-6xl">
+          <p className="mt-6 max-w-lg text-balance font-destaque text-3xl leading-[1.2] text-areia sm:text-5xl lg:text-6xl">
             {site.tagline.valor}
           </p>
         )}
