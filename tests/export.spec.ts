@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { spawnSync } from "node:child_process";
 
 /**
  * The landing page is served by GitHub Pages out of a project subdirectory, so its
@@ -19,13 +20,18 @@ const SECOES = ["hero", "casa", "fotos", "onde", "reservar"] as const;
 
 function html(): string {
   const index = join(OUT, "index.html");
-  expect(existsSync(index), `${index} does not exist — run \`pnpm test:export\``).toBe(true);
+  expect(
+    existsSync(index),
+    `${index} does not exist — run \`pnpm test:export\``,
+  ).toBe(true);
   return readFileSync(index, "utf8");
 }
 
 /** Every root-relative URL the document references. External links are not ours. */
 function caminhosAbsolutos(doc: string): string[] {
-  const encontrados = [...doc.matchAll(/(?:href|src)="(\/[^"]*)"/g)].map((m) => m[1]);
+  const encontrados = [...doc.matchAll(/(?:href|src)="(\/[^"]*)"/g)].map(
+    (m) => m[1],
+  );
   return [...new Set(encontrados)];
 }
 
@@ -39,17 +45,47 @@ test("the export lands in out/, with the .nojekyll Pages needs", () => {
 test("every absolute URL is prefixed with the base path", () => {
   const caminhos = caminhosAbsolutos(html());
 
-  expect(caminhos.length, "no absolute URLs at all — the export looks empty").toBeGreaterThan(0);
+  expect(
+    caminhos.length,
+    "no absolute URLs at all — the export looks empty",
+  ).toBeGreaterThan(0);
   expect(caminhos.filter((c) => !c.startsWith(`${BASE}/`))).toEqual([]);
 });
 
 test("every asset the page references exists on disk", () => {
-  const assets = caminhosAbsolutos(html()).filter((c) => /\.(css|js|woff2?|png|svg|ico)$/.test(c));
+  const assets = caminhosAbsolutos(html()).filter((c) =>
+    /\.(css|js|woff2?|png|svg|ico)$/.test(c),
+  );
 
-  expect(assets.length, "the page references no stylesheet or script").toBeGreaterThan(0);
+  expect(
+    assets.length,
+    "the page references no stylesheet or script",
+  ).toBeGreaterThan(0);
 
-  const faltando = assets.filter((c) => !existsSync(join(OUT, c.slice(BASE.length))));
+  const faltando = assets.filter(
+    (c) => !existsSync(join(OUT, c.slice(BASE.length))),
+  );
   expect(faltando, "referenced by index.html but absent from out/").toEqual([]);
+});
+
+test("the logo and the favicon ship with the repo, so the deploy wears them", () => {
+  // The Pages build runs on a clean clone. A brand file that lives only on someone's
+  // disk passes every local test and silently drops off the live page — the hero falls
+  // back to type and the tab has no icon. Owner handed them over for this site, 2026-09-25.
+  for (const arquivo of ["public/logo-vinil.png", "public/icon.png"]) {
+    const rastreado = spawnSync(
+      "git",
+      ["ls-files", "--error-unmatch", arquivo],
+      {
+        cwd: join(__dirname, ".."),
+      },
+    );
+    expect(rastreado.status, `${arquivo} is not tracked by git`).toBe(0);
+  }
+
+  const doc = html();
+  expect(doc).toContain(`${BASE}/logo-vinil.png`);
+  expect(doc).toMatch(new RegExp(`rel="icon"[^>]*href="${BASE}/icon\\.png`));
 });
 
 test("the page asks search engines to stay away", () => {
