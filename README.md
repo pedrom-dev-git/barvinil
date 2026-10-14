@@ -33,7 +33,12 @@ pnpm lint
 pnpm typecheck
 pnpm test:e2e   # Playwright — viewport mobile é o projeto padrão
 pnpm test:export # build estático do Pages + as asserções sobre out/
+pnpm prints     # prints de apresentação em ~/Desktop/media/piw-prints/<hoje>/
 ```
+
+`pnpm prints` é a captura das telas que entram em apresentação e relatório. Roda fora do
+`pnpm test:e2e` de propósito — escreve fora do repo, e os prints carregam as fotos da casa.
+Cada shot afirma o estado antes de fotografar; destino alternativo em `PIW_PRINTS_DIR`.
 
 O GitHub Pages serve o repo a partir de `/barvinil`, e não da raiz de um domínio. Por isso o build
 do deploy roda com `NEXT_PUBLIC_BASE_PATH=/barvinil` e todo arquivo de `public/` é referenciado via

@@ -7,9 +7,11 @@ import { defineConfig, devices } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./tests",
-  // export.spec.ts asserts on the out/ directory, which only exists after a build
-  // with the Pages base path. It has its own config and its own command.
-  testIgnore: "export.spec.ts",
+  // Both of these have their own config and their own command. export.spec.ts
+  // asserts on the out/ directory, which only exists after a build with the Pages
+  // base path; prints.spec.ts writes screenshots into ~/Desktop/media, and this
+  // suite has no business touching anything outside the repo.
+  testIgnore: ["export.spec.ts", "prints.spec.ts"],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

@@ -39,7 +39,15 @@ async function guardar(alvo: Page | Locator, nome: string, opcoes = {}) {
 
 /** Fonts loaded and every image decoded: a shot taken before that is a different page. */
 async function pronta(page: Page) {
+  // No shot is ever caught mid-transition: the booking panel is open or shut, and an
+  // open panel looks the same either way.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
+  // `next dev` floats its own dev-tools badge over the corner of the page. It is not
+  // part of the site and it has no business in a slide, so it is hidden here rather
+  // than switched off in next.config.ts — the badge is useful while developing.
+  await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
+  await expect(page.locator("nextjs-portal")).toBeHidden();
   await page.evaluate(() => document.fonts.ready);
   await page.waitForFunction(() => Array.from(document.images).every((i) => i.complete));
 }
@@ -66,7 +74,9 @@ async function preencherReserva(page: Page, secao: string) {
   await s.getByLabel(/pessoas/i).fill("4");
   await s.getByLabel(/nome/i).fill("Maria Eduarda");
   // Deliberately not submitted: sending leaves for wa.me and there is nothing to
-  // photograph there. The filled form is what explains the flow on a slide.
+  // photograph there. The filled form is what explains the flow on a slide. The last
+  // field keeps the focus ring otherwise, and on a slide that reads as an error state.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 }
 
 test.describe("wiring", () => {
