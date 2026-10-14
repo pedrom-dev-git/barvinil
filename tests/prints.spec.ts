@@ -49,7 +49,19 @@ async function pronta(page: Page) {
   await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
   await expect(page.locator("nextjs-portal")).toBeHidden();
   await page.evaluate(() => document.fonts.ready);
-  await page.waitForFunction(() => Array.from(document.images).every((i) => i.complete));
+
+  // next/image is lazy below the fold, and a fullPage shot does not scroll for us: the
+  // gallery could photograph empty. Walk the page once, come back, and then demand
+  // that every image actually decoded — `complete` alone is true for one that failed.
+  await page.evaluate(() => {
+    for (let y = 0; y < document.body.scrollHeight; y += window.innerHeight) {
+      window.scrollTo(0, y);
+    }
+    window.scrollTo(0, 0);
+  });
+  await page.waitForFunction(() =>
+    Array.from(document.images).every((i) => i.complete && i.naturalWidth > 0),
+  );
 }
 
 /** Opens the booking panel in `secao` and waits for it to be fully open. */
@@ -73,6 +85,10 @@ async function preencherReserva(page: Page, secao: string) {
   await s.getByLabel(/hora/i).selectOption("20:30");
   await s.getByLabel(/pessoas/i).fill("4");
   await s.getByLabel(/nome/i).fill("Maria Eduarda");
+  // The slide claims this booking; the print has to be carrying all four answers.
+  await expect(s.getByLabel(/hora/i)).toHaveValue("20:30");
+  await expect(s.getByLabel(/pessoas/i)).toHaveValue("4");
+  await expect(s.getByLabel(/nome/i)).toHaveValue("Maria Eduarda");
   // Deliberately not submitted: sending leaves for wa.me and there is nothing to
   // photograph there. The filled form is what explains the flow on a slide. The last
   // field keeps the focus ring otherwise, and on a slide that reads as an error state.
@@ -163,11 +179,22 @@ test.describe("prints", () => {
     test("06 · topo", async ({ page }) => {
       await pronta(page);
       await expect(page.locator("section#hero")).toBeVisible();
+      await expect(page.locator("section#hero").getByRole("button", { name: /reservar mesa/i }))
+        .toBeVisible();
+      const estouro = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(estouro).toBeLessThanOrEqual(0);
       await guardar(page, "06-desktop-topo.png");
     });
 
     test("07 · página completa", async ({ page }) => {
       await pronta(page);
+      for (const id of ["hero", "casa", "fotos", "onde", "reservar"]) {
+        await expect(page.locator(`section#${id}`)).toBeAttached();
+      }
+      await expect(page.locator("section#fotos li img")).toHaveCount(2);
+      await expect(page.getByRole("contentinfo")).toContainText(/prot[óo]tipo/i);
       await guardar(page, "07-desktop-pagina-completa.png", { fullPage: true });
     });
 
