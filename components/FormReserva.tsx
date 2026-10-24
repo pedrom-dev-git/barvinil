@@ -29,9 +29,11 @@ const HORARIOS = Array.from({ length: 48 }, (_, i) => {
   return `${p(Math.floor(i / 2))}:${i % 2 ? "30" : "00"}`;
 });
 
+// The border is a UI component, so it owes WCAG 1.4.11 its 3:1 — at areia/25 it was
+// at 1,95:1 and the fields read as holes in the panel. tests/contraste.spec.ts.
 const campo =
-  "min-h-12 w-full rounded-lg border border-areia/25 bg-musgo px-4 text-base text-areia " +
-  "placeholder:text-areia-suave/50 focus:border-areia focus:outline-none";
+  "min-h-12 w-full rounded-lg border border-areia/50 bg-musgo px-4 text-base text-areia " +
+  "placeholder:text-areia-suave focus:border-areia focus:outline-none";
 const rotulo = "font-display text-[0.7rem] uppercase tracking-marquise text-areia-suave";
 
 type Props = {
@@ -138,7 +140,7 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
           <div className={`pt-4 ${alinhar === "centro" ? "flex justify-center" : ""}`}>
             <form
               onSubmit={enviar}
-              className="flex w-full flex-col gap-5 rounded-2xl border border-areia/10 bg-musgo-claro p-6 sm:w-96"
+              className="flex w-full flex-col gap-5 rounded-2xl border border-areia/25 bg-musgo-claro p-6 sm:w-96"
             >
               <div className="flex flex-col gap-2">
                 <label htmlFor={`${id}-data`} className={rotulo}>
@@ -156,7 +158,7 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
                   <span
                     data-data-extenso
                     aria-hidden="true"
-                    className={data ? "" : "text-areia-suave/75"}
+                    className={data ? "" : "text-areia-suave"}
                   >
                     {data ? dataPorExtenso(data) : "DD/MM/AAAA"}
                   </span>
@@ -186,9 +188,10 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
                     required
                     value={hora}
                     onChange={(e) => setHora(e.target.value)}
-                    // The "--:--" hint is faded like a placeholder, so an untouched
-                    // select does not read as a time already chosen.
-                    className={`${campo} cursor-pointer ${hora ? "" : "text-areia-suave/50"}`}
+                    // The "--:--" hint is set in the softer tone, so an untouched
+                    // select does not read as a time already chosen — softer, not
+                    // faded: at half opacity it was 2,55:1 and stopped being text.
+                    className={`${campo} cursor-pointer ${hora ? "" : "text-areia-suave"}`}
                   >
                     <option value="" disabled>
                       --:--

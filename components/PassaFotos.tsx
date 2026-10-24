@@ -112,7 +112,7 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
         {quadros.map((q) => (
           <li
             key={q.id}
-            className="relative aspect-4/5 w-full shrink-0 snap-start overflow-hidden rounded-lg border border-areia/10 bg-musgo-claro"
+            className="relative aspect-4/5 w-full shrink-0 snap-start overflow-hidden rounded-lg border border-areia/25 bg-musgo-claro"
           >
             {q.src ? (
               <Image
@@ -132,7 +132,7 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
       {quadros.length > 1 && (
         // mt-2, not mt-4: the targets below are 44px tall and mostly empty, so the
         // ink sits where mt-4 on a tight row would have put it.
-        <div className="mt-2 flex items-center">
+        <div className="mt-2 flex items-center justify-center">
           {quadros.map((q, i) => (
             // 1.5 units of ink in a 44px-tall target — small on the page, still a
             // thumb-sized button (landing.spec.ts asserts the 44px on the phone).
@@ -145,9 +145,11 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
               onClick={() => irPara(i)}
               className="grid h-11 w-7 place-items-center"
             >
+              {/* At areia/30 the dim dot was 2,40:1 and said nothing about there
+                  being more photos. It is a control: 3:1, like any other. */}
               <span
-                className={`h-1.5 w-1.5 rounded-full transition-colors ${
-                  i === aceso ? "bg-areia" : "bg-areia/30"
+                className={`h-2 w-2 rounded-full transition-colors ${
+                  i === aceso ? "bg-areia" : "bg-areia/55"
                 }`}
               />
             </button>

@@ -36,7 +36,7 @@ export function OndeQuando() {
     <section
       id="onde"
       aria-labelledby="onde-titulo"
-      className="border-t border-areia/10 px-6 py-20 sm:px-10 sm:py-28"
+      className="border-t border-areia/25 px-6 py-20 sm:px-10 sm:py-28"
     >
       <div className="mx-auto w-full max-w-md sm:max-w-2xl lg:max-w-4xl">
         <h2
@@ -79,7 +79,7 @@ export function OndeQuando() {
           </div>
 
           {linhas.length > 0 && (
-            <ul className="divide-y divide-areia/10 self-start border-y border-areia/10">
+            <ul className="divide-y divide-areia/25 self-start border-y border-areia/25">
               {linhas.map((l) => (
                 <li key={l.rotulo}>
                   <a
