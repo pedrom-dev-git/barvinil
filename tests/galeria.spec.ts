@@ -39,6 +39,9 @@ test("after the last photo it comes back to the first", async ({ page }) => {
   await page.locator(`[data-ponto="${n - 1}"]`).click();
   await expect.poll(() => aceso(page)).toBe(String(n - 1));
 
+  // Clicking left the pointer on the gallery, and a pointer resting there is a
+  // reader: the clock only picks up again once it moves away.
+  await page.mouse.move(0, 0);
   await expect.poll(() => aceso(page), { timeout: 12_000 }).toBe("0");
 });
 
