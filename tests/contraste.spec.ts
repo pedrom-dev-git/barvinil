@@ -108,6 +108,14 @@ test.describe("o formulário de reserva", () => {
   });
 });
 
+test("a borda do botão vazado é visível (1.4.11, 3:1)", async ({ page }) => {
+  // "Ver cardápio" is a button, and a button's boundary is the whole of what says
+  // it is one — there is no fill to fall back on.
+  const vazado = page.locator("section#hero a[target='_blank']").first();
+  await expect(vazado).toBeVisible();
+  expect(await contraste(vazado, "border-top-color")).toBeGreaterThanOrEqual(3);
+});
+
 test("o ponto apagado do passa-fotos é visível (3:1)", async ({ page }) => {
   const apagado = page.locator('section#fotos [data-ponto]:not([aria-current="true"]) span').first();
   await expect(apagado).toBeAttached();
