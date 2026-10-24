@@ -35,13 +35,14 @@ test("the slideshow moves to the next photo on its own", async ({ page }) => {
 });
 
 test("after the last photo it comes back to the first", async ({ page }) => {
+  // Watched, not touched: pressing a dot would hand the rail to the guest and the
+  // clock would stop, which is the point of the next test but not of this one.
+  test.setTimeout(60_000);
   const n = await quadros(page);
-  await page.locator(`[data-ponto="${n - 1}"]`).click();
-  await expect.poll(() => aceso(page)).toBe(String(n - 1));
 
-  // Clicking left the pointer on the gallery, and a pointer resting there is a
-  // reader: the clock only picks up again once it moves away.
-  await page.mouse.move(0, 0);
+  for (let i = 1; i < n; i++) {
+    await expect.poll(() => aceso(page), { timeout: 12_000 }).toBe(String(i));
+  }
   await expect.poll(() => aceso(page), { timeout: 12_000 }).toBe("0");
 });
 
@@ -78,6 +79,9 @@ test("the dots go straight to a photo", async ({ page }) => {
 
 test("swiping by hand lights the dot of the frame it landed on", async ({ page }) => {
   const n = await quadros(page);
+  // What is under test is the dot following the rail, so the clock is held still
+  // first: a tick landing mid-swipe would be testing two things at once.
+  await page.locator(TRILHO).hover();
   await page
     .locator(TRILHO)
     .evaluate((el, i) => el.scrollTo({ left: el.clientWidth * i, behavior: "instant" }), n - 1);

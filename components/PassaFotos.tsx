@@ -31,7 +31,10 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
   const trilho = useRef<HTMLUListElement>(null);
   const [aceso, setAceso] = useState(0);
   const [parado, setParado] = useState(false);
+  const [encerrado, setEncerrado] = useState(false);
   const [menosMovimento, setMenosMovimento] = useState(false);
+  /** The frame this component itself put the rail on, last time it moved it. */
+  const nosso = useRef(0);
 
   useEffect(() => {
     const consulta = matchMedia("(prefers-reduced-motion: reduce)");
@@ -44,19 +47,38 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
   // Movement is opt-in, same stance as .gira in globals.css: for anyone who asked
   // for less motion there is no timer at all, not a timer that gets overridden.
   useEffect(() => {
-    if (menosMovimento || parado || quadros.length < 2) return;
+    if (menosMovimento || parado || encerrado || quadros.length < 2) return;
     const relogio = setInterval(() => {
       const el = trilho.current;
       if (!el) return;
-      const proximo = (indice(el) + 1) % quadros.length;
-      el.scrollTo({ left: proximo * el.clientWidth, behavior: "smooth" });
+      rolar(el, (indice(el) + 1) % quadros.length, "smooth");
     }, INTERVALO);
     return () => clearInterval(relogio);
-  }, [menosMovimento, parado, quadros.length]);
+  }, [menosMovimento, parado, encerrado, quadros.length]);
+
+  /** Scrolls the rail, claiming the frame so arriving there does not read as a swipe. */
+  function rolar(el: HTMLElement, i: number, comportamento: ScrollBehavior) {
+    nosso.current = i;
+    el.scrollTo({ left: i * el.clientWidth, behavior: comportamento });
+  }
 
   function irPara(i: number) {
     const el = trilho.current;
-    el?.scrollTo({ left: i * el.clientWidth, behavior: menosMovimento ? "auto" : "smooth" });
+    if (!el) return;
+    // Having chosen a photo, the guest is not carried off it five seconds later.
+    setEncerrado(true);
+    rolar(el, i, menosMovimento ? "auto" : "smooth");
+  }
+
+  function aoRolar(el: HTMLElement) {
+    const i = indice(el);
+    setAceso(i);
+
+    // A scroll arrives as a stream of events, so what counts is where the rail comes
+    // to rest, not where it passes. Resting anywhere this component did not ask for
+    // is a hand on the rail — and from there it is the guest's, not the clock's.
+    const assentado = Math.abs(el.scrollLeft - i * el.clientWidth) <= 1.5;
+    if (assentado && i !== nosso.current) setEncerrado(true);
   }
 
   return (
@@ -64,11 +86,13 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
     // width of this section's container would be over 1100px tall on a desktop.
     <div
       className="mt-8 w-full max-w-sm"
-      // The pointer resting on the gallery means someone is looking at it. The
-      // keyboard case is narrower and sits on the rail itself: a dot is a control,
-      // pressing it is not reading, so it moves the rail without stopping the clock.
-      onMouseEnter={() => setParado(true)}
-      onMouseLeave={() => setParado(false)}
+      // A mouse resting on the gallery is someone reading it, and it leaves again.
+      // A finger is not that: a phone fires a synthetic pointerenter and never the
+      // matching leave, so pausing on touch here would stop the clock for good on
+      // the first finger that grazes the rail. Touch says what it wants by moving
+      // the rail or pressing a dot, and both are handled where they happen.
+      onPointerEnter={(e) => e.pointerType === "mouse" && setParado(true)}
+      onPointerLeave={(e) => e.pointerType === "mouse" && setParado(false)}
     >
       {/* tabIndex + aria-label: a horizontally scrollable region has to be reachable
           by keyboard, or there is no way past the first frame without a mouse. axe
@@ -78,8 +102,10 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
         tabIndex={0}
         aria-label="Fotos da casa"
         data-passa-fotos
-        onScroll={(e) => setAceso(indice(e.currentTarget))}
-        onFocus={() => setParado(true)}
+        onScroll={(e) => aoRolar(e.currentTarget)}
+        // Keyboard focus is reading; the focus a tap leaves behind is not, and it
+        // never blurs. :focus-visible is exactly that distinction.
+        onFocus={(e) => setParado(e.currentTarget.matches(":focus-visible"))}
         onBlur={() => setParado(false)}
         className="flex w-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
