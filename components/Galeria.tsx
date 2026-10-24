@@ -24,13 +24,14 @@ export function Galeria() {
   const temArquivo = (arquivo: string | null): arquivo is string =>
     arquivo !== null && existsSync(join(process.cwd(), "public", "fotos", arquivo));
 
-  // Photos first, then empty frames only up to the end of the row of three. Six
-  // frames with two photos read as a page still under construction; a full row
-  // reads as a gallery. Never fewer than three, so the section says "photos go here".
+  // Only photos ride the rail. One frame is on screen at a time here, so an empty
+  // slot is not texture beside two photos the way it was in the old grid — it is a
+  // whole screen of nothing that the clock walks the guest into, and it reads as an
+  // image that failed to load. The groove frames are for having no photos at all,
+  // where three of them say "photos go here".
   const comFoto = todas.filter((f) => temArquivo(f.arquivo));
   const vazios = todas.filter((f) => !temArquivo(f.arquivo));
-  const total = Math.max(3, Math.ceil(comFoto.length / 3) * 3);
-  const quadros: Quadro[] = [...comFoto, ...vazios].slice(0, total).map((f) => ({
+  const quadros: Quadro[] = [...comFoto, ...vazios].slice(0, comFoto.length || 3).map((f) => ({
     id: f.id,
     src: temArquivo(f.arquivo) ? asset(`/fotos/${f.arquivo}`) : null,
     alt: f.alt,

@@ -200,10 +200,11 @@ test.describe("prints", () => {
 
     test("08 · a casa e a galeria", async ({ page }) => {
       await pronta(page);
-      // Two photos and one empty frame — the house still owes four. The empty frame
-      // belongs in the print: it is what "em andamento" looks like.
+      // Two photos, and the house still owes four — but the slideshow passes only
+      // what exists. An empty frame caught in a print reads as a broken image, not
+      // as "em andamento", and the slide has a caption to say that part.
       const molduras = page.locator("section#fotos li");
-      await expect(molduras).toHaveCount(3);
+      await expect(molduras).toHaveCount(2);
       await expect(molduras.locator("img")).toHaveCount(2);
 
       const casa = await page.locator("section#casa").boundingBox();

@@ -193,8 +193,8 @@ test("the gallery leads with the photos it has, and never shows a broken one", a
   const n = disponiveis.length;
 
   const quadros = page.locator("section#fotos li");
-  // Photos first, then empty frames only up to the end of the row of three.
-  await expect(quadros).toHaveCount(Math.max(3, Math.ceil(n / 3) * 3));
+  // Only photos ride the rail; the groove frames are for having none at all.
+  await expect(quadros).toHaveCount(n || 3);
   await expect(page.locator("section#fotos li img")).toHaveCount(n);
 
   for (let i = 0; i < n; i++) {
