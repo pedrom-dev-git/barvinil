@@ -22,7 +22,7 @@ export function classeBotao(variante: "cheio" | "vazado" = "vazado"): string {
   const estilo =
     variante === "cheio"
       ? "bg-areia text-musgo hover:bg-areia-suave"
-      : "border border-areia/35 text-areia hover:border-argila hover:bg-areia/5";
+      : "border border-areia/55 text-areia hover:border-argila hover:bg-areia/5";
 
   return `${base} ${estilo}`;
 }
