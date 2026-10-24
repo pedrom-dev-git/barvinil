@@ -71,7 +71,7 @@ export function OndeQuando() {
                 href={e.mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-7 inline-flex min-h-12 items-center rounded-full border border-areia/35 px-7 font-display text-sm uppercase tracking-[0.18em] text-areia transition-colors duration-200 hover:border-areia hover:bg-areia/5"
+                className="mt-7 inline-flex min-h-12 items-center rounded-full border border-areia/55 px-7 font-display text-sm uppercase tracking-[0.18em] text-areia transition-colors duration-200 hover:border-areia hover:bg-areia/5"
               >
                 Como chegar
               </a>

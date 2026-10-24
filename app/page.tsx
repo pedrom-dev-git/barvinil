@@ -3,6 +3,7 @@ import { ACasa } from "@/components/ACasa";
 import { Galeria } from "@/components/Galeria";
 import { OndeQuando } from "@/components/OndeQuando";
 import { Reservar } from "@/components/Reservar";
+import { Revelar } from "@/components/Revelar";
 
 /**
  * The five sections plano-pmv.md §1 fixed: hero, a casa, fotos, onde/quando, reservar.
@@ -17,6 +18,8 @@ export default function Home() {
       <Galeria />
       <OndeQuando />
       <Reservar />
+      {/* Renders nothing: it lets the sections above arrive as they are scrolled to. */}
+      <Revelar />
     </main>
   );
 }

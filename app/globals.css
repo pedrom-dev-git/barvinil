@@ -92,6 +92,28 @@ body {
       animation: gira 45s linear infinite;
     }
   }
+
+  /* A seção que ainda não chegou. A classe só é posta pelo browser, por
+   * components/Revelar.tsx, e só quando há observador para trazê-la de volta —
+   * o HTML servido nunca esconde nada. Dentro de no-preference pelo mesmo motivo
+   * que o disco: movimento é opt-in, e assim não há briga de cascata a perder.
+   *
+   * Só deslocamento, nunca opacidade: texto a opacity 0 não tem contraste nenhum,
+   * e o axe reprova — com razão. O que a seção faz é chegar, não aparecer. */
+  @media (prefers-reduced-motion: no-preference) {
+    .revelar {
+      transform: translateY(1.75rem);
+    }
+
+    .revelar,
+    .revelado {
+      transition: transform 700ms var(--ease-suave);
+    }
+
+    .revelado {
+      transform: none;
+    }
+  }
 }
 
 @keyframes gira {
