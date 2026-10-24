@@ -89,6 +89,17 @@ test("swiping by hand lights the dot of the frame it landed on", async ({ page }
   await expect.poll(() => aceso(page)).toBe(String(n - 1));
 });
 
+test("an empty frame never rides along with the photos", async ({ page }) => {
+  // Padding the rail up to a row of three is grid arithmetic, and the grid is gone.
+  // In a slideshow an empty frame is not texture beside two photos: it is a whole
+  // screen of nothing, shown five seconds in every fifteen, looking like an image
+  // that failed to load. The groove frame is for having no photos at all.
+  const fotos = await page.locator("section#fotos li img").count();
+  const molduras = await page.locator("section#fotos li").count();
+
+  expect(molduras).toBe(fotos || 3);
+});
+
 test("one photo fills the frame, one frame at a time", async ({ page }) => {
   const { largura, visivel, total, molduras } = await page.locator(TRILHO).evaluate((el) => ({
     largura: (el.firstElementChild as HTMLElement).getBoundingClientRect().width,
