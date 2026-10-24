@@ -91,10 +91,11 @@ test.describe("o passa-fotos, com o dedo", () => {
     // A phone fires a synthetic mouseenter and never a mouseleave, and a tap on a
     // focusable rail focuses it with no blur to follow. Pausing on either one means
     // the feature the owner asked for dies under the first finger that grazes it.
+    const n = await page.locator(PONTO).count();
     await expect.poll(() => aceso(page), { timeout: 12_000 }).toBe("1");
 
     await page.locator("[data-passa-fotos]").tap();
-    await expect.poll(() => aceso(page), { timeout: 12_000 }).toBe("2");
+    await expect.poll(() => aceso(page), { timeout: 12_000 }).toBe(String(2 % n));
   });
 
   test("tocar um ponto fixa a foto escolhida", async ({ page }) => {
