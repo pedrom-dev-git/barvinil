@@ -36,12 +36,12 @@ export function OndeQuando() {
     <section
       id="onde"
       aria-labelledby="onde-titulo"
-      className="border-t border-areia/25 px-6 py-20 sm:px-10 sm:py-28"
+      className="border-t border-areia/25 px-6 py-14 sm:px-10 sm:py-28"
     >
       <div className="mx-auto w-full max-w-md sm:max-w-2xl lg:max-w-4xl">
         <h2
           id="onde-titulo"
-          className="font-display text-[0.7rem] uppercase tracking-marquise text-areia-suave sm:text-xs"
+          className="font-display text-xs uppercase tracking-marquise text-areia-suave"
         >
           Onde e quando
         </h2>
@@ -86,9 +86,12 @@ export function OndeQuando() {
                     href={l.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex min-h-14 items-center justify-between gap-4 py-4 transition-colors duration-200 hover:text-areia-suave"
+                    // Stacked on a phone: at 342px wide, label and value sat 135px
+                    // apart with nothing between them, three rows running, and the
+                    // eye lost which value belonged to which label.
+                    className="flex min-h-14 flex-col items-start justify-center gap-0.5 py-3 transition-colors duration-200 hover:text-areia-suave sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-4"
                   >
-                    <span className="font-display text-[0.65rem] uppercase tracking-marquise text-areia-suave">
+                    <span className="font-display text-[0.7rem] uppercase tracking-marquise text-areia-suave">
                       {l.rotulo}
                     </span>
                     <span className="text-base text-areia">{l.texto}</span>

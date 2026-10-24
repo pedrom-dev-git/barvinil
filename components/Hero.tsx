@@ -35,7 +35,7 @@ export function Hero() {
   return (
     <section
       id="hero"
-      className="grao relative flex flex-col justify-center overflow-hidden px-6 pt-24 pb-20 sm:min-h-[100svh] sm:px-10 sm:py-24"
+      className="grao relative flex flex-col justify-center overflow-hidden px-6 pt-14 pb-16 sm:min-h-[100svh] sm:px-10 sm:py-24"
     >
       {/* The record sits off the right edge on a phone and centres as the page widens. */}
       <Sulcos className="gira pointer-events-none absolute -right-1/3 top-1/2 h-[130vw] w-[130vw] -translate-y-1/2 text-areia opacity-[0.09] sm:-right-[10%] sm:h-[85vh] sm:w-[85vh] lg:right-[6%]" />
@@ -58,7 +58,7 @@ export function Hero() {
           )}
         </h1>
 
-        <p className="font-display text-[0.7rem] uppercase tracking-marquise text-areia-suave sm:text-xs">
+        <p className="font-display text-xs uppercase tracking-marquise text-areia-suave">
           {/* The official lockup already reads "(hi-fi bar)" under the name. */}
           {temLogo ? cidade : `hi-fi bar${cidade ? ` · ${cidade}` : ""}`}
         </p>

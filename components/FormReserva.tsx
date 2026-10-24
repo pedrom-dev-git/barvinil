@@ -118,7 +118,17 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
         Reservar mesa
       </button>
 
-      {aoLado && <div className="order-3 mt-3 flex flex-col sm:order-2 sm:mt-0">{aoLado}</div>}
+      {/* items-start, not stretch: two pills of identical width, one filled and one
+          outlined, read as a pair of equals and the hierarchy goes flat. */}
+      {aoLado && (
+        <div
+          className={`order-3 mt-3 flex flex-col sm:order-2 sm:mt-0 ${
+            alinhar === "centro" ? "items-center" : "items-start"
+          }`}
+        >
+          {aoLado}
+        </div>
+      )}
 
       {/* Opens by animating the grid row from 0fr to 1fr, so the panel eases to its
           natural height without anyone measuring it. Closed, it is `inert` and

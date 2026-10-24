@@ -16,7 +16,7 @@
 export function Rodape() {
   return (
     <footer className="border-t border-areia/25 px-6 py-10 sm:px-10">
-      <p className="mx-auto max-w-md text-[0.7rem] leading-relaxed text-areia-suave sm:max-w-2xl lg:max-w-4xl">
+      <p className="mx-auto max-w-md text-xs leading-relaxed text-areia-suave sm:max-w-2xl lg:max-w-4xl">
         Protótipo acadêmico do Projeto Integrador Web — Unilasalle-RS, 2026/2. Não é o site
         oficial do VINIL hi-fi bar, e as informações desta página ainda não foram confirmadas
         pela casa.
