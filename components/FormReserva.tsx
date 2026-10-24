@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from "react";
+import { useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { linkReserva } from "@/lib/whatsapp";
 import { classeBotao } from "./Botao";
 
@@ -54,30 +54,32 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
   const [hoje, setHoje] = useState<string>();
   const [data, setData] = useState("");
   const [hora, setHora] = useState("");
-  // Browsers without showPicker() get the plain native field instead.
-  const [dataNativa, setDataNativa] = useState(false);
   const calendario = useRef<HTMLInputElement>(null);
+  const painel = useRef<HTMLDivElement>(null);
 
-  // A native <input type="date"> is drawn in the browser's locale — mm/dd/yyyy on
-  // an English system. So the calendar stays native, but the field the guest sees
-  // is ours and always reads in pt-BR.
+  // Desktop nicety, never the only path: Chrome opens its calendar from the icon
+  // alone, so a click anywhere on the field gets the guest the same picker. On a
+  // phone the tap already landed on a real date input and the browser opened its
+  // own — which is the whole point, because iOS never implemented showPicker() for
+  // type=date and answers the call by doing nothing at all (WebKit 268114/261703).
   function abrirCalendario() {
     try {
       calendario.current?.showPicker();
     } catch {
-      setDataNativa(true);
+      /* the browser opens its own picker on the click; nothing to recover from */
     }
-  }
-
-  function teclaNaData(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Tab") return;
-    e.preventDefault();
-    if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") abrirCalendario();
   }
 
   function alternar() {
     setHoje(hojeLocal());
-    setAberto((a) => !a);
+    const abrindo = !aberto;
+    setAberto(abrindo);
+    // The panel eases open over 500ms, so it is measured after it has arrived.
+    // On a real phone the fold is ~664px, not the 844px of a chromeless viewport:
+    // opened from the hero, the submit button lands below it.
+    if (abrindo) {
+      setTimeout(() => painel.current?.scrollIntoView({ block: "nearest" }), 550);
+    }
   }
 
   function enviar(e: FormEvent<HTMLFormElement>) {
@@ -121,6 +123,7 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
           `invisible`: out of reach for keyboard and screen readers, not just shut. */}
       <div
         id={`${id}-painel`}
+        ref={painel}
         data-painel-reserva
         inert={!aberto}
         className={`order-2 grid w-full text-left transition-[grid-template-rows,opacity,visibility] duration-500 ease-suave sm:order-3 sm:basis-full ${
@@ -137,51 +140,39 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
               onSubmit={enviar}
               className="flex w-full flex-col gap-5 rounded-2xl border border-areia/10 bg-musgo-claro p-6 sm:w-96"
             >
-              <div className="relative flex flex-col gap-2">
+              <div className="flex flex-col gap-2">
                 <label htmlFor={`${id}-data`} className={rotulo}>
                   Data
                 </label>
-                {dataNativa ? (
+                {/* The native date input IS the field: full size, transparent, on top.
+                    A finger lands on a real date control and the browser opens its own
+                    picker, with no API in between — the one thing an iPhone does not
+                    give us is showPicker(). What the guest reads underneath is ours,
+                    because a native date input is drawn in the browser's locale, and
+                    that reads mm/dd/yyyy on a phone set to English. */}
+                <div
+                  className={`${campo} relative flex items-center focus-within:border-areia has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-[3px] has-[:focus-visible]:outline-areia`}
+                >
+                  <span
+                    data-data-extenso
+                    aria-hidden="true"
+                    className={data ? "" : "text-areia-suave/75"}
+                  >
+                    {data ? dataPorExtenso(data) : "DD/MM/AAAA"}
+                  </span>
                   <input
                     id={`${id}-data`}
+                    ref={calendario}
                     name="data"
                     type="date"
                     required
                     min={hoje}
                     value={data}
                     onChange={(e) => setData(e.target.value)}
-                    className={campo}
+                    onClick={abrirCalendario}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                   />
-                ) : (
-                  <>
-                    <input
-                      id={`${id}-data`}
-                      type="text"
-                      inputMode="none"
-                      autoComplete="off"
-                      required
-                      placeholder="DD/MM/AAAA"
-                      value={data ? dataPorExtenso(data) : ""}
-                      onChange={() => {}}
-                      onClick={abrirCalendario}
-                      onKeyDown={teclaNaData}
-                      className={`${campo} cursor-pointer caret-transparent`}
-                    />
-                    {/* The real value, and the calendar's anchor. Out of the tab order
-                        and the accessibility tree: the field above speaks for it. */}
-                    <input
-                      ref={calendario}
-                      name="data"
-                      type="date"
-                      min={hoje}
-                      value={data}
-                      onChange={(e) => setData(e.target.value)}
-                      tabIndex={-1}
-                      aria-hidden="true"
-                      className="pointer-events-none absolute bottom-0 left-4 h-px w-px opacity-0"
-                    />
-                  </>
-                )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

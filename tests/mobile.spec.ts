@@ -131,7 +131,12 @@ test("o botão de enviar cabe na tela do celular de verdade", async ({ page }) =
   await s.getByRole("button", { name: /reservar mesa/i }).click();
   await expect(s.getByLabel(/data/i)).toBeVisible();
 
+  // The panel eases open over half a second, so this is where it comes to rest.
   const enviar = s.getByRole("button", { name: /enviar/i });
-  const caixa = (await enviar.boundingBox())!;
-  expect(caixa.y + caixa.height, "fundo do botão vs. fold").toBeLessThanOrEqual(664);
+  await expect
+    .poll(async () => {
+      const c = (await enviar.boundingBox())!;
+      return c.y + c.height;
+    }, { message: "fundo do botão vs. fold" })
+    .toBeLessThanOrEqual(664);
 });

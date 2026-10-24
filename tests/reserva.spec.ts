@@ -93,11 +93,14 @@ for (const { secao, onde } of CTAS) {
       const s = page.locator(onde);
       await s.getByRole("button", { name: /reservar mesa/i }).click();
 
-      // The calendar is the browser's own; the field shows its answer in pt-BR.
+      // The calendar is the browser's own, and so is the field: what the guest
+      // reads over it is ours, in pt-BR, whatever locale the phone is set to.
       const data = isoLocal(3);
-      await s.locator('input[type="date"]').fill(data);
+      await s.getByLabel(/data/i).fill(data);
       const [ano, mes, dia] = data.split("-");
-      await expect(s.getByLabel(/data/i)).toHaveValue(new RegExp(`^${dia}/${mes}/${ano}`));
+      await expect(s.locator("[data-data-extenso]")).toHaveText(
+        new RegExp(`^${dia}/${mes}/${ano}`),
+      );
 
       await s.getByLabel(/hora/i).selectOption("20:30");
       await s.getByLabel(/pessoas/i).fill("4");
@@ -126,11 +129,14 @@ for (const { secao, onde } of CTAS) {
       await expect(s.getByLabel(/pessoas/i)).not.toHaveAttribute("placeholder", /.+/);
       await expect(s.getByLabel(/nome/i)).not.toHaveAttribute("placeholder", /.+/);
 
-      const opaco = (el: Element) => {
-        const m = getComputedStyle(el, "::placeholder").color.match(/[\d.]+/g) ?? [];
-        return m.length === 4 ? Number(m[3]) : 1;
-      };
-      expect(await s.getByLabel(/data/i).evaluate(opaco)).toBeLessThanOrEqual(0.6);
+      // The date hint is drawn text, not a ::placeholder — the field underneath is
+      // the browser's own date input, worn transparent. It still has to read as a
+      // hint: fainter than the date it will be replaced by.
+      const cor = (el: Element) => getComputedStyle(el).color;
+      const dica = s.locator("[data-data-extenso]");
+      const apagada = await dica.evaluate(cor);
+      await s.getByLabel(/data/i).fill(isoLocal(1));
+      expect(await dica.evaluate(cor)).not.toBe(apagada);
 
       const hora = s.getByLabel(/hora/i);
       const corVazia = await hora.evaluate((el) => getComputedStyle(el).color);
