@@ -25,7 +25,7 @@ export function Hero() {
     : null;
 
   const cardapio = preenchido(site.cardapio) ? (
-    <Botao href={site.cardapio.valor} externo>
+    <Botao href={site.cardapio.valor} externo className="w-full sm:w-auto">
       Ver cardápio
     </Botao>
   ) : null;

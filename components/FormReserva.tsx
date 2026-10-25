@@ -132,11 +132,13 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
         Reservar mesa
       </button>
 
-      {/* items-start, not stretch: two pills of identical width, one filled and one
-          outlined, read as a pair of equals and the hierarchy goes flat. */}
+      {/* On a phone the buttons stack, and two pills of different widths under one
+          another read as crooked — so there they share the column, and the filled
+          one against the outlined one is what carries the hierarchy. From sm up they
+          sit side by side, where matching widths would make them look like equals. */}
       {aoLado && (
         <div
-          className={`order-3 mt-3 flex flex-col sm:order-2 sm:mt-0 ${
+          className={`order-3 mt-3 flex w-full flex-col sm:order-2 sm:mt-0 sm:w-auto ${
             alinhar === "centro" ? "items-center" : "items-start"
           }`}
         >
