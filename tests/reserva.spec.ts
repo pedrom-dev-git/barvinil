@@ -155,6 +155,41 @@ for (const { secao, onde } of CTAS) {
       for (const h of horas) expect(h).toMatch(/^([01]\d|2[0-3]):[0-5]\d$/);
     });
 
+    // The window the owner settled on 2026-10-25. It says when the house takes a
+    // table, not when it opens: site.horarioDetalhado is still a-preencher, and
+    // nothing on this page claims otherwise.
+    test("only offers the booking window, 19:30 to 22:30", async ({ page }) => {
+      const s = page.locator(onde);
+      await s.getByRole("button", { name: /reservar mesa/i }).click();
+      const horas = await s
+        .getByLabel(/hora/i)
+        .locator("option:not([value=''])")
+        .evaluateAll((os) => os.map((o) => (o as HTMLOptionElement).value));
+
+      expect(horas).toEqual([
+        "19:30",
+        "20:00",
+        "20:30",
+        "21:00",
+        "21:30",
+        "22:00",
+        "22:30",
+      ]);
+    });
+
+    test("says the window out loud, next to the field", async ({ page }) => {
+      // A list that just stops at 22:30 leaves the guest guessing why. The hint is
+      // tied to the select, so it is read with the field and not only seen near it.
+      const s = page.locator(onde);
+      await s.getByRole("button", { name: /reservar mesa/i }).click();
+
+      const dica = s.locator("[data-dica-hora]");
+      await expect(dica).toHaveText(/19:30.*22:30/);
+      expect(await s.getByLabel(/hora/i).getAttribute("aria-describedby")).toBe(
+        await dica.getAttribute("id"),
+      );
+    });
+
     test("does not offer a date in the past", async ({ page }) => {
       const s = page.locator(onde);
       await s.getByRole("button", { name: /reservar mesa/i }).click();

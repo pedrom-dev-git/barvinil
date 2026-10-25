@@ -105,6 +105,7 @@ test.describe("o formulário de reserva", () => {
     const s = page.locator("section#reservar");
     expect(await contraste(s.locator("[data-data-extenso]"), "color")).toBeGreaterThanOrEqual(4.5);
     expect(await contraste(s.getByLabel(/hora/i), "color")).toBeGreaterThanOrEqual(4.5);
+    expect(await contraste(s.locator("[data-dica-hora]"), "color")).toBeGreaterThanOrEqual(4.5);
   });
 });
 
