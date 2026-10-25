@@ -1,4 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
+import { site, preenchido } from "../content/site";
+import { linkReserva } from "../lib/whatsapp";
 
 /**
  * What a finger does, which the rest of the suite never does.
@@ -140,4 +142,60 @@ test("o botão de enviar cabe na tela do celular de verdade", async ({ page }) =
       return c.y + c.height;
     }, { message: "fundo do botão vs. fold" })
     .toBeLessThanOrEqual(664);
+});
+
+test.describe("o envio, quando o browser recusa a aba", () => {
+  test.skip(!preenchido(site.whatsapp), "no phone number in content/site.ts");
+
+  /** Local YYYY-MM-DD, three days out — what an <input type="date"> takes. */
+  function daquiA(dias: number): string {
+    const d = new Date();
+    d.setDate(d.getDate() + dias);
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  }
+
+  const PEDIDO = { hora: "20:30", pessoas: 4, nome: "Pedro" };
+
+  async function preencher(page: Page, data: string) {
+    const s = await abrirReserva(page);
+    await s.getByLabel(/data/i).fill(data);
+    await s.getByLabel(/hora/i).selectOption(PEDIDO.hora);
+    await s.getByLabel(/pessoas/i).fill(String(PEDIDO.pessoas));
+    await s.getByLabel(/nome/i).fill(PEDIDO.nome);
+    return s;
+  }
+
+  test("o pedido sai na mesma aba", async ({ page }) => {
+    if (!preenchido(site.whatsapp)) return;
+    // WebKit only opens a window it can tie to a user gesture, and iOS drops that
+    // token easily — the engine then answers window.open with null. The booking
+    // used to die right there: no tab, no error, no WhatsApp, nothing said.
+    await page.addInitScript(`window.open = () => null;`);
+    await page.route("https://wa.me/**", (rota) =>
+      rota.fulfill({ status: 200, contentType: "text/html", body: "<title>wa</title>" }),
+    );
+    await page.goto("/");
+
+    const data = daquiA(3);
+    const s = await preencher(page, data);
+    await s.getByRole("button", { name: /enviar/i }).tap();
+
+    await page.waitForURL(/wa\.me/);
+    expect(page.url()).toBe(linkReserva(site.whatsapp.valor.e164, { data, ...PEDIDO }));
+  });
+
+  test("com a aba liberada, a página fica onde está", async ({ page }) => {
+    if (!preenchido(site.whatsapp)) return;
+    await page.addInitScript(`window.open = () => ({});`);
+    await page.goto("/");
+    const inicio = page.url();
+
+    const s = await preencher(page, daquiA(3));
+    await s.getByRole("button", { name: /enviar/i }).tap();
+
+    // The happy path still opens a tab, and the page the guest came from stays put.
+    await page.waitForTimeout(500);
+    expect(page.url()).toBe(inicio);
+  });
 });

@@ -23,13 +23,18 @@ function isoLocal(dias = 0): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-/** Records window.open instead of leaving for wa.me — no network, no new tab. */
+/** Records window.open instead of leaving for wa.me — no network, no new tab.
+ *
+ * It answers with a window, never null: null is the browser REFUSING to open one,
+ * and the form now falls back to the same tab when that happens. A spy that returns
+ * null would send the whole suite off to wa.me. That refusal has its own test, in
+ * tests/mobile.spec.ts. */
 async function gravarAberturas(page: Page) {
   await page.addInitScript(() => {
     (window as unknown as { __abertos: string[] }).__abertos = [];
     window.open = ((url?: string | URL) => {
       (window as unknown as { __abertos: string[] }).__abertos.push(String(url));
-      return null;
+      return {} as Window;
     }) as typeof window.open;
   });
 }
