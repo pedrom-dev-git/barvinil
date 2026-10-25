@@ -22,12 +22,26 @@ function dataPorExtenso(iso: string): string {
   return `${p(dia)}/${p(mes)}/${ano} · ${semana}`;
 }
 
-/** Every half hour, 24h. The house's opening hours are not confirmed yet
- * (site.horarioDetalhado is `a-preencher`); once they are, the slots come from it. */
-const HORARIOS = Array.from({ length: 48 }, (_, i) => {
+/** The window the house takes a table in, given by the owner on 2026-10-25. It is
+ * about booking, not about the door: site.horarioDetalhado is still `a-preencher`,
+ * and nothing on the page says when the house opens. Moving the window is these two
+ * lines — and a window that crossed midnight would need more than that. */
+const ABRE = "19:30";
+const FECHA = "22:30";
+
+/** Every half hour from ABRE to FECHA, both ends included. */
+const HORARIOS = (() => {
+  const emMinutos = (h: string) => {
+    const [hora, minuto] = h.split(":").map(Number);
+    return hora * 60 + minuto;
+  };
   const p = (n: number) => String(n).padStart(2, "0");
-  return `${p(Math.floor(i / 2))}:${i % 2 ? "30" : "00"}`;
-});
+  const lista: string[] = [];
+  for (let m = emMinutos(ABRE); m <= emMinutos(FECHA); m += 30) {
+    lista.push(`${p(Math.floor(m / 60))}:${p(m % 60)}`);
+  }
+  return lista;
+})();
 
 // The border is a UI component, so it owes WCAG 1.4.11 its 3:1 — at areia/25 it was
 // at 1,95:1 and the fields read as holes in the panel. tests/contraste.spec.ts.
@@ -187,48 +201,59 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <label htmlFor={`${id}-hora`} className={rotulo}>
-                    Hora
-                  </label>
-                  <select
-                    id={`${id}-hora`}
-                    name="hora"
-                    required
-                    value={hora}
-                    onChange={(e) => setHora(e.target.value)}
-                    // The "--:--" hint is set in the softer tone, so an untouched
-                    // select does not read as a time already chosen — softer, not
-                    // faded: at half opacity it was 2,55:1 and stopped being text.
-                    className={`${campo} cursor-pointer ${hora ? "" : "text-areia-suave"}`}
-                  >
-                    <option value="" disabled>
-                      --:--
-                    </option>
-                    {HORARIOS.map((h) => (
-                      <option key={h} value={h} className="text-areia">
-                        {h}
+              <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor={`${id}-hora`} className={rotulo}>
+                      Hora
+                    </label>
+                    <select
+                      id={`${id}-hora`}
+                      name="hora"
+                      required
+                      aria-describedby={`${id}-janela`}
+                      value={hora}
+                      onChange={(e) => setHora(e.target.value)}
+                      // The "--:--" hint is set in the softer tone, so an untouched
+                      // select does not read as a time already chosen — softer, not
+                      // faded: at half opacity it was 2,55:1 and stopped being text.
+                      className={`${campo} cursor-pointer ${hora ? "" : "text-areia-suave"}`}
+                    >
+                      <option value="" disabled>
+                        --:--
                       </option>
-                    ))}
-                  </select>
+                      {HORARIOS.map((h) => (
+                        <option key={h} value={h} className="text-areia">
+                          {h}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label htmlFor={`${id}-pessoas`} className={rotulo}>
+                      Pessoas
+                    </label>
+                    <input
+                      id={`${id}-pessoas`}
+                      name="pessoas"
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      step={1}
+                      required
+                      className={campo}
+                    />
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <label htmlFor={`${id}-pessoas`} className={rotulo}>
-                    Pessoas
-                  </label>
-                  <input
-                    id={`${id}-pessoas`}
-                    name="pessoas"
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    step={1}
-                    required
-                    className={campo}
-                  />
-                </div>
+                {/* The list simply stops at 22:30 otherwise, and a guest who wanted
+                    23:00 is left guessing whether the house is shut or the page is
+                    broken. This is about taking a table, not about the door: when
+                    the house opens is still the owner's to tell. */}
+                <p id={`${id}-janela`} data-dica-hora className="text-xs text-areia-suave">
+                  Reservas das {ABRE} às {FECHA}
+                </p>
               </div>
 
               <div className="flex flex-col gap-2">
