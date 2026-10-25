@@ -110,7 +110,12 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
       pessoas: Number(dados.get("pessoas")),
       nome: String(dados.get("nome")),
     });
-    window.open(url, "_blank", "noopener,noreferrer");
+    // WebKit only opens a window it can tie to a user gesture, and iOS drops that
+    // token easily; refused, window.open answers null. Ignoring that answer is how a
+    // booking ends in nothing at all on an iPhone, so it goes in this tab instead —
+    // which is a route WhatsApp knows how to take.
+    const janela = window.open(url, "_blank", "noopener,noreferrer");
+    if (!janela) window.location.href = url;
   }
 
   return (
