@@ -81,7 +81,10 @@ async function preencherReserva(page: Page, secao: string) {
   const amanha = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 
   await s.locator('input[type="date"]').fill(amanha);
-  await expect(s.getByLabel(/data/i)).toHaveValue(/^\d{2}\/\d{2}\/\d{4}/);
+  // The field is the browser's own date input, worn transparent, so its value is the
+  // ISO one. What the slide has to show is the pt-BR line drawn over it.
+  await expect(s.getByLabel(/data/i)).toHaveValue(amanha);
+  await expect(s.locator("[data-data-extenso]")).toHaveText(/^\d{2}\/\d{2}\/\d{4}/);
   await s.getByLabel(/hora/i).selectOption("20:30");
   await s.getByLabel(/pessoas/i).fill("4");
   await s.getByLabel(/nome/i).fill("Maria Eduarda");
