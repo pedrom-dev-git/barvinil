@@ -33,6 +33,9 @@ const sobra = (page: Page) =>
 /** Guards the tests that drive the passing: with nothing out of view, there is none. */
 async function comOQuePassar(page: Page) {
   test.skip((await sobra(page)) <= 1, "as fotos cabem todas na fileira: não há o que passar");
+  // The dots are measured off the laid-out rail, so they arrive with hydration and
+  // not with the HTML. Counting them before that reads zero and tests nothing.
+  await expect(page.locator(PONTO).first()).toBeVisible();
 }
 
 test.beforeEach(async ({ page }) => {
