@@ -14,9 +14,64 @@ export type Quadro = {
 /** 5 s a photo: long enough to look at, short enough to reach the last frame. */
 const INTERVALO = 5000;
 
-/** Which frame the rail is showing. Exact because a frame is one view wide, no gap. */
+/**
+ * How wide a frame is, by how many stand side by side at the widest viewport.
+ *
+ * Three abreast is the ceiling, not the rule: the house still owes four of the six
+ * photos, and a row holding three columns with one of them empty reads as broken
+ * rather than as pending. So the frames widen to fill the row they have.
+ *
+ * Spelled out rather than assembled: Tailwind reads this file as text, and a class
+ * built at runtime is a class that was never generated. The gap is gap-4 below, so
+ * two columns give up 1rem of the row and three give up 2rem.
+ */
+const LARGURA = [
+  "w-full",
+  "w-full",
+  "w-full sm:w-[calc((100%-1rem)/2)]",
+  "w-full sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)]",
+] as const;
+
+/**
+ * Where the rail rests with frame `i` at its left edge.
+ *
+ * Clamped, because the last frames share the last resting place: three abreast out
+ * of four photos, the rail runs out of travel one frame in, and asking for the
+ * fourth has to mean the same scroll position as asking for the second.
+ */
+function alvo(el: HTMLElement, i: number): number {
+  const filho = el.children[i] as HTMLElement | undefined;
+  if (!filho) return 0;
+  return Math.min(filho.offsetLeft, el.scrollWidth - el.clientWidth);
+}
+
+/** Which frame the rail is showing: the one whose resting place it sits nearest. */
 function indice(el: HTMLElement): number {
-  return el.clientWidth ? Math.round(el.scrollLeft / el.clientWidth) : 0;
+  let melhor = 0;
+  for (let i = 1; i < el.children.length; i++) {
+    // Strict, so where several frames clamp to the same place the first one wins —
+    // which is the one the guest sees on the left.
+    if (Math.abs(alvo(el, i) - el.scrollLeft) < Math.abs(alvo(el, melhor) - el.scrollLeft)) {
+      melhor = i;
+    }
+  }
+  return melhor;
+}
+
+/**
+ * How many places the rail actually stops at — which is what a dot stands for.
+ *
+ * Not the number of photos: three abreast out of four, there are two stops, and a
+ * dot for a photo that is never reached on its own would be a control that lies.
+ * Zero when nothing is out of view, and then there is nothing to pass at all.
+ */
+function paradas(el: HTMLElement): number {
+  const fim = el.scrollWidth - el.clientWidth;
+  if (fim <= 1) return 0;
+  for (let i = 0; i < el.children.length; i++) {
+    if ((el.children[i] as HTMLElement).offsetLeft >= fim - 1) return i + 1;
+  }
+  return el.children.length;
 }
 
 /**
@@ -33,6 +88,8 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
   const [parado, setParado] = useState(false);
   const [encerrado, setEncerrado] = useState(false);
   const [menosMovimento, setMenosMovimento] = useState(false);
+  /** Stops, measured. 0 until the browser has laid the rail out — see below. */
+  const [pontos, setPontos] = useState(0);
   /** The frame this component itself put the rail on, last time it moved it. */
   const nosso = useRef(0);
 
@@ -44,22 +101,35 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
     return () => consulta.removeEventListener("change", ler);
   }, []);
 
+  // How many stops there are is a question only the laid-out page can answer: it
+  // depends on how many frames fit the row, which is the viewport's business. So it
+  // is measured, and measured again when the rail is resized across a breakpoint.
+  useEffect(() => {
+    const el = trilho.current;
+    if (!el) return;
+    const medir = () => setPontos(paradas(el));
+    medir();
+    const observador = new ResizeObserver(medir);
+    observador.observe(el);
+    return () => observador.disconnect();
+  }, [quadros.length]);
+
   // Movement is opt-in, same stance as .gira in globals.css: for anyone who asked
   // for less motion there is no timer at all, not a timer that gets overridden.
   useEffect(() => {
-    if (menosMovimento || parado || encerrado || quadros.length < 2) return;
+    if (menosMovimento || parado || encerrado || pontos < 2) return;
     const relogio = setInterval(() => {
       const el = trilho.current;
       if (!el) return;
-      rolar(el, (indice(el) + 1) % quadros.length, "smooth");
+      rolar(el, (indice(el) + 1) % pontos, "smooth");
     }, INTERVALO);
     return () => clearInterval(relogio);
-  }, [menosMovimento, parado, encerrado, quadros.length]);
+  }, [menosMovimento, parado, encerrado, pontos]);
 
   /** Scrolls the rail, claiming the frame so arriving there does not read as a swipe. */
   function rolar(el: HTMLElement, i: number, comportamento: ScrollBehavior) {
     nosso.current = i;
-    el.scrollTo({ left: i * el.clientWidth, behavior: comportamento });
+    el.scrollTo({ left: alvo(el, i), behavior: comportamento });
   }
 
   function irPara(i: number) {
@@ -77,15 +147,17 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
     // A scroll arrives as a stream of events, so what counts is where the rail comes
     // to rest, not where it passes. Resting anywhere this component did not ask for
     // is a hand on the rail — and from there it is the guest's, not the clock's.
-    const assentado = Math.abs(el.scrollLeft - i * el.clientWidth) <= 1.5;
+    const assentado = Math.abs(el.scrollLeft - alvo(el, i)) <= 1.5;
     if (assentado && i !== nosso.current) setEncerrado(true);
   }
 
   return (
-    // Capped width, left-aligned with the section title: a 4:5 frame at the full
-    // width of this section's container would be over 1100px tall on a desktop.
+    // Capped on a phone, where one portrait frame is the whole of it; from sm up the
+    // rail takes the full width of this section's container, which is already
+    // centred. A 4:5 frame only got too tall for a desktop while it was alone in the
+    // row — three abreast of a 896px section are ~288px wide and ~360px tall.
     <div
-      className="mt-8 w-full max-w-sm"
+      className="mt-8 w-full max-w-sm sm:max-w-none"
       // A mouse resting on the gallery is someone reading it, and it leaves again.
       // A finger is not that: a phone fires a synthetic pointerenter and never the
       // matching leave, so pausing on touch here would stop the clock for good on
@@ -96,7 +168,11 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
     >
       {/* tabIndex + aria-label: a horizontally scrollable region has to be reachable
           by keyboard, or there is no way past the first frame without a mouse. axe
-          flags this as scrollable-region-focusable, and it is right. */}
+          flags this as scrollable-region-focusable, and it is right.
+
+          relative is load-bearing, not decoration: it makes this the offsetParent of
+          the frames, so a frame's offsetLeft is the scroll position that brings it
+          to the left edge — which is the whole of the arithmetic above. */}
       <ul
         ref={trilho}
         tabIndex={0}
@@ -107,19 +183,21 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
         // never blurs. :focus-visible is exactly that distinction.
         onFocus={(e) => setParado(e.currentTarget.matches(":focus-visible"))}
         onBlur={() => setParado(false)}
-        className="flex w-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="relative flex w-full snap-x snap-mandatory gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {quadros.map((q) => (
           <li
             key={q.id}
-            className="relative aspect-4/5 w-full shrink-0 snap-start overflow-hidden rounded-lg border border-areia/25 bg-musgo-claro"
+            className={`relative aspect-4/5 shrink-0 snap-start overflow-hidden rounded-lg border border-areia/25 bg-musgo-claro ${
+              LARGURA[Math.min(3, quadros.length)]
+            }`}
           >
             {q.src ? (
               <Image
                 src={q.src}
                 alt={q.alt}
                 fill
-                sizes="(min-width: 640px) 384px, 100vw"
+                sizes="(min-width: 1024px) 288px, (min-width: 640px) 328px, 100vw"
                 className="object-cover"
               />
             ) : (
@@ -129,15 +207,15 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
         ))}
       </ul>
 
-      {quadros.length > 1 && (
+      {pontos > 1 && (
         // mt-2, not mt-4: the targets below are 44px tall and mostly empty, so the
         // ink sits where mt-4 on a tight row would have put it.
         <div className="mt-2 flex items-center justify-center">
-          {quadros.map((q, i) => (
+          {Array.from({ length: pontos }, (_, i) => (
             // 1.5 units of ink in a 44px-tall target — small on the page, still a
             // thumb-sized button (landing.spec.ts asserts the 44px on the phone).
             <button
-              key={q.id}
+              key={quadros[i]?.id ?? i}
               type="button"
               data-ponto={i}
               aria-current={i === aceso}
