@@ -248,6 +248,16 @@ export const site = {
         alt: "Dois drinks e uma tábua de petiscos numa bandeja, sob luz quente",
       },
       {
+        // Not one of the six the brief asked for: the house sent it anyway, and a
+        // photograph it chose to send is worth a slot of its own.
+        id: "petiscos",
+        arquivo: "petiscos.jpg",
+        pedido: "Entregue pela casa em 30/10/2026, sem pedido nosso.",
+        alt:
+          "Seis bolinhos empanados com creme verde sobre uma tábua gravada com o " +
+          "logotipo do VINIL, em fundo vermelho",
+      },
+      {
         id: "salao",
         arquivo: null,
         pedido:
