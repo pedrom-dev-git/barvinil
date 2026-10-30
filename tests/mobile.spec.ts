@@ -87,6 +87,9 @@ test.describe("o passa-fotos, com o dedo", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
     await page.locator("section#fotos").scrollIntoViewIfNeeded();
+    // The dots are measured off the laid-out rail, so they arrive with hydration and
+    // not with the HTML. Counting them before that reads zero and tests nothing.
+    await expect(page.locator(PONTO).first()).toBeVisible();
   });
 
   test("um toque de passagem não mata o rodízio", async ({ page }) => {
@@ -111,9 +114,12 @@ test.describe("o passa-fotos, com o dedo", () => {
 
   test("arrastar com a mão também fixa", async ({ page }) => {
     const n = await page.locator(PONTO).count();
+    // To the end of the travel, not to clientWidth × i: frames are separated by a
+    // gap now, so a multiple of the view is a place the rail does not come to rest,
+    // and a rail left between two frames is not a hand that chose one.
     await page
       .locator("[data-passa-fotos]")
-      .evaluate((el, i) => el.scrollTo({ left: el.clientWidth * i, behavior: "instant" }), n - 1);
+      .evaluate((el) => el.scrollTo({ left: el.scrollWidth - el.clientWidth, behavior: "instant" }));
     await expect.poll(() => aceso(page)).toBe(String(n - 1));
 
     await page.waitForTimeout(7000);

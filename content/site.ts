@@ -148,6 +148,9 @@ export const site = {
    * the deploy are never broken by its absence.
    */
   videoHero: {
+    // The bar's own reel of a drink being made, cut to 720p H.264 without audio —
+    // ~1,2 MB for 21 s, because it loads on mobile data behind everything else. The
+    // kitchen reel is encoded beside it as cozinha.mp4; swapping is this one line.
     valor: "hero.mp4",
     fonte: DONO,
     status: "confirmado",
@@ -234,7 +237,9 @@ export const site = {
         id: "prato",
         arquivo: "prato.jpg",
         pedido: "Um prato da cozinha, bem iluminado.",
-        alt: "Mesa posta com petiscos, carnes e drinks sob o logotipo do VINIL na parede",
+        alt:
+          "Tábua de costela fumegante com fritas, farofa e linguiça, ao lado de um " +
+          "disco de vinil, sob o logotipo do VINIL na parede",
       },
       {
         id: "drink",
@@ -250,8 +255,8 @@ export const site = {
         alt: "Salão do VINIL à noite",
       },
     ] as ReadonlyArray<FotoSlot>,
-    // som and discos: the house's own, sent on 2026-10-30 at 1024×1024 — square, so
-    // the 4:5 frame crops the sides. prato and drink are still the provisional pair
+    // prato, som and discos: the house's own, sent on 2026-10-30 at 1024×1024 —
+    // square, so the 4:5 frame crops the sides. drink is still the provisional shot
     // from 2026-09-25 (734×1048, below the 1600px the brief asks for). fachada and
     // salao the house still owes.
     fonte: "⟨A PREENCHER: o dono — o grupo não produz foto (plano-pmv.md §1)⟩",
