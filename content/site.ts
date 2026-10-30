@@ -39,6 +39,7 @@ export function preenchido<T>(d: Dado<T>): d is Dado<T> & { valor: T } {
 const BIO_SITE = "bio.site/Vinilbar, consultado em 2026-09-04";
 const INSTAGRAM = "Instagram @barvinil, consultado em 2026-09-04";
 const MAPS = "Google Maps, via o link do bio.site, consultado em 2026-09-04";
+const DONO = "material oficial do dono, entregue via Pedro em 2026-10-30";
 
 export type FotoSlot = {
   readonly id: string;
@@ -71,10 +72,13 @@ export const site = {
     status: "fonte-publica",
   } as Dado<string>,
 
+  /** The line the house section opens with, set large. His words, not ours. */
   descricao: {
-    valor: "Um refúgio urbano onde o som, o sabor e o espaço se encontram em harmonia.",
-    fonte: INSTAGRAM,
-    status: "fonte-publica",
+    valor: "Um bar onde o tempo desacelera.",
+    // Replaces the Instagram wording ("Um refúgio urbano onde o som, o sabor e o
+    // espaço se encontram em harmonia"): that one was scraped, this one he wrote.
+    fonte: DONO,
+    status: "confirmado",
   } as Dado<string>,
 
   posicionamento: {
@@ -110,9 +114,16 @@ export const site = {
 
   /** The house's own story, in the owner's words. Nobody else can write this. */
   historia: {
-    valor: null,
-    fonte: "⟨A PREENCHER: o dono — quando abriu, por que abriu, de onde vem o acervo⟩",
-    status: "a-preencher",
+    valor:
+      "Onde cada faixa em vinil não é trilha de fundo, mas protagonista. Onde o copo " +
+      "tem nome, o prato tem história e a arquitetura tem memória. Um sobrado da década " +
+      "de 40, com janelas de madeira azul e sacada de ferro, guarda em suas paredes " +
+      "texturizadas o mesmo princípio que move o som em vinil: o valor da presença, da " +
+      "escuta, do bom gosto. Aqui, cada detalhe arquitetônico é parte da experiência – " +
+      "não para mirar o passado, mas para valorizar o presente com densidade, com " +
+      "intenção. Não estamos aqui para servir mais do mesmo.",
+    fonte: DONO,
+    status: "confirmado",
   } as Dado<string>,
 
   /**
