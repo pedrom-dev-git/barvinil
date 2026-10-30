@@ -201,3 +201,19 @@ test("the gallery leads with the photos it has, and never shows a broken one", a
     await expect(quadros.nth(i).locator("img")).toHaveAttribute("alt", disponiveis[i].alt);
   }
 });
+
+test("the house section speaks with the owner's own words", async ({ page }) => {
+  // The lead line and the paragraph under it are both his, so this reads them off
+  // content/site.ts instead of pinning the copy here: when he changes a word, the
+  // page is what has to follow, not the test. What is asserted is that neither of
+  // them is sitting in the file unrendered — a draft nobody approved never shows,
+  // and words he did approve must not stay hidden either.
+  expect(
+    preenchido(site.descricao) && preenchido(site.historia),
+    "a casa fala com as palavras do dono: descrição e história têm de renderizar",
+  ).toBe(true);
+
+  const casa = page.locator("section#casa");
+  await expect(casa.getByText(site.descricao.valor ?? "", { exact: true })).toBeVisible();
+  await expect(casa.getByText(site.historia.valor ?? "", { exact: true })).toBeVisible();
+});
