@@ -217,3 +217,55 @@ test("the house section speaks with the owner's own words", async ({ page }) => 
   await expect(casa.getByText(site.descricao.valor ?? "", { exact: true })).toBeVisible();
   await expect(casa.getByText(site.historia.valor ?? "", { exact: true })).toBeVisible();
 });
+
+/** The reel is the house's and stays out of git: a clean clone and the deploy have
+ *  no file, and the hero has to stand up without it, as it does without the logo. */
+const temVideoHero =
+  preenchido(site.videoHero) &&
+  existsSync(join(process.cwd(), "public", "video", site.videoHero.valor));
+
+test("the hero plays the house's reel behind the name, never over it", async ({ page }) => {
+  const video = page.locator("section#hero video");
+
+  if (!temVideoHero) {
+    await expect(video).toHaveCount(0);
+    return;
+  }
+
+  await expect(video).toHaveCount(1);
+  // Decoration, not content: it says nothing the page does not already say in type,
+  // so it stays out of the accessibility tree and out of the tab order.
+  await expect(video).toHaveAttribute("aria-hidden", "true");
+  await expect(video).toHaveJSProperty("muted", true);
+  await expect(video).toHaveJSProperty("loop", true);
+
+  // RNF07 asks for AA, and the areia text measures ~12:1 against musgo — against raw
+  // footage it measures nothing at all. The reel stays faint and a scrim sits over
+  // it, so what the type reads against is still essentially the house's green.
+  const opacidade = await video.evaluate((el) => parseFloat(getComputedStyle(el).opacity));
+  expect(opacidade).toBeLessThanOrEqual(0.3);
+  await expect(page.locator("section#hero [data-cortina]")).toHaveCount(1);
+
+  // The name, the tagline and the booking form are the hero; the reel is behind them.
+  const atras = await page.evaluate(() => {
+    const v = document.querySelector("section#hero video");
+    const h1 = document.querySelector("section#hero h1");
+    if (!v || !h1) return null;
+    const z = (el: Element) => Number(getComputedStyle(el.parentElement ?? el).zIndex) || 0;
+    return z(h1) > z(v);
+  });
+  expect(atras, "o conteúdo do topo tem de ficar sobre o vídeo").toBe(true);
+});
+
+test("the hero's reel does not play for anyone who asked for less motion", async ({ page }) => {
+  // Same stance as .gira and as the gallery: movement is opt-in. There is no reel
+  // paused in the background either — there is no reel.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  const pediuMenosMovimento = await page.evaluate(
+    () => matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  expect(pediuMenosMovimento, "emulation did not reach the page").toBe(true);
+
+  await expect(page.locator("section#hero video")).toHaveCount(0);
+});

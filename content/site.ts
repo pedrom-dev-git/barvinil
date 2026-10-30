@@ -139,6 +139,20 @@ export const site = {
     status: "confirmado",
   } as Dado<string>,
 
+  /**
+   * The reel that plays behind the name, expected at public/video/<valor>.
+   *
+   * NOT committed, for the same reason as the logo and the photos: it is the house's
+   * footage, not ours to publish. Without the file the hero is exactly what it was
+   * before — type, the turning record and the booking form — so a clean clone and
+   * the deploy are never broken by its absence.
+   */
+  videoHero: {
+    valor: "hero.mp4",
+    fonte: DONO,
+    status: "confirmado",
+  } as Dado<string>,
+
   endereco: {
     valor: {
       logradouro: "R. Cel. Vicente, 126",

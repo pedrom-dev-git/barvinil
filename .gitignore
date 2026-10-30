@@ -16,6 +16,8 @@ blob-report/
 # O site funciona sem elas (ver README, seção "Assets da marca").
 /public/fotos/*
 !/public/fotos/.gitkeep
+/public/video/*
+!/public/video/.gitkeep
 
 # Documentos internos do grupo — vivem no repo da disciplina, não neste.
 /CLAUDE.md
