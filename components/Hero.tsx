@@ -21,8 +21,8 @@ export function Hero() {
   const temLogo =
     preenchido(site.logotipo) &&
     existsSync(join(process.cwd(), "public", site.logotipo.valor));
-  // Same build-time check, same reason: the footage is the house's and is not in
-  // the repository, so the hero has to read as finished without it.
+  // Same build-time check as the logo: the hero has to read as finished with no
+  // footage at all, because which reel is published is a decision that changes.
   const temVideo =
     preenchido(site.videoHero) &&
     existsSync(join(process.cwd(), "public", "video", site.videoHero.valor));

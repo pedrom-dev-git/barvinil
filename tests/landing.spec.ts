@@ -184,9 +184,9 @@ test("uses the official artwork for the wordmark and the V icon as favicon", asy
 });
 
 test("the gallery leads with the photos it has, and never shows a broken one", async ({ page }) => {
-  // Photos are the house's and stay out of git, so a slot can name a file this
-  // checkout does not have — the deploy, for one. Such a slot must render as an
-  // empty frame, not as a broken image.
+  // A slot can name a file this checkout does not have: the house delivers them one
+  // at a time, and the brief is written before the photograph exists. Such a slot
+  // must render as an empty frame, not as a broken image.
   const disponiveis = (site.fotos.valor ?? []).filter(
     (f) => f.arquivo !== null && existsSync(join(process.cwd(), "public", "fotos", f.arquivo)),
   );
@@ -218,8 +218,8 @@ test("the house section speaks with the owner's own words", async ({ page }) => 
   await expect(casa.getByText(site.historia.valor ?? "", { exact: true })).toBeVisible();
 });
 
-/** The reel is the house's and stays out of git: a clean clone and the deploy have
- *  no file, and the hero has to stand up without it, as it does without the logo. */
+/** Which reel is published is a decision that changes, so the hero has to stand up
+ *  with no file at all — the same way it stands up without the logo. */
 const temVideoHero =
   preenchido(site.videoHero) &&
   existsSync(join(process.cwd(), "public", "video", site.videoHero.valor));

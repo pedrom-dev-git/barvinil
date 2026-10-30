@@ -12,12 +12,12 @@ blob-report/
 .playwright/
 .DS_Store
 
-# Marca e fotos do bar — propriedade da casa, não nossas para publicar.
-# O site funciona sem elas (ver README, seção "Assets da marca").
-/public/fotos/*
-!/public/fotos/.gitkeep
+# Fotos e reel da casa: publicados a partir de 30/10/2026, por decisão do dono via
+# Pedro — são material promocional do bar, e sem eles o site no ar mostra molduras
+# vazias. O segundo reel (cozinha) fica de fora enquanto não for o escolhido: subir
+# 1,7 MB que ninguém baixa é peso no Pages à toa.
 /public/video/*
-!/public/video/.gitkeep
+!/public/video/hero.mp4
 
 # Originais que a casa mandou, antes de virarem asset: ficam fora do git como o resto.
 /.fotos-entrada/

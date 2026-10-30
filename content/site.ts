@@ -129,9 +129,9 @@ export const site = {
   /**
    * The wordmark file, expected at public/<valor>.
    *
-   * NOT committed: the logo is the bar's trademark, not ours to publish. Drop the
-   * file in place locally and the hero uses it; without it the hero sets the name in
-   * type instead and the page still works. A clean clone is never broken by its absence.
+   * The hero uses it when the file is there and sets the name in type when it is
+   * not, so a checkout without it is never broken — which is also what keeps the
+   * page honest if the house ever asks for its mark back.
    */
   logotipo: {
     valor: "logo-vinil.png",
@@ -150,7 +150,8 @@ export const site = {
   videoHero: {
     // The bar's own reel of a drink being made, cut to 720p H.264 without audio —
     // ~1,2 MB for 21 s, because it loads on mobile data behind everything else. The
-    // kitchen reel is encoded beside it as cozinha.mp4; swapping is this one line.
+    // kitchen reel is encoded beside it locally as cozinha.mp4 and stays out of the
+    // deploy until it is the one chosen; swapping is this line plus the .gitignore.
     valor: "hero.mp4",
     fonte: DONO,
     status: "confirmado",
