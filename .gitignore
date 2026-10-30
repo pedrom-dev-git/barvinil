@@ -19,6 +19,10 @@ blob-report/
 /public/video/*
 !/public/video/.gitkeep
 
+# Originais que a casa mandou, antes de virarem asset: ficam fora do git como o resto.
+/.fotos-entrada/
+/.midia-entrada/
+
 # Documentos internos do grupo — vivem no repo da disciplina, não neste.
 /CLAUDE.md
 /ASSETS.md
