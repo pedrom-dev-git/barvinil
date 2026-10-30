@@ -118,6 +118,11 @@ test("a borda do botão vazado é visível (1.4.11, 3:1)", async ({ page }) => {
 });
 
 test("o ponto apagado do passa-fotos é visível (3:1)", async ({ page }) => {
+  // The dots are the rail's stops, not its photos: when every photo already fits the
+  // row there is no stop to show and no dot to measure.
+  const pontos = await page.locator("section#fotos [data-ponto]").count();
+  test.skip(pontos === 0, "as fotos cabem todas na fileira: não há ponto");
+
   const apagado = page.locator('section#fotos [data-ponto]:not([aria-current="true"]) span').first();
   await expect(apagado).toBeAttached();
   expect(await contraste(apagado, "background-color")).toBeGreaterThanOrEqual(3);
