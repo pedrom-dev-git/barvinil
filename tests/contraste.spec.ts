@@ -119,9 +119,14 @@ test("a borda do botão vazado é visível (1.4.11, 3:1)", async ({ page }) => {
 
 test("o ponto apagado do passa-fotos é visível (3:1)", async ({ page }) => {
   // The dots are the rail's stops, not its photos: when every photo already fits the
-  // row there is no stop to show and no dot to measure.
-  const pontos = await page.locator("section#fotos [data-ponto]").count();
-  test.skip(pontos === 0, "as fotos cabem todas na fileira: não há ponto");
+  // row there is no stop to show and no dot to measure. Asked of the rail and not of
+  // the dots, because the dots are measured after hydration — counting them first
+  // reads zero and skips a case the desktop very much has.
+  const sobra = await page
+    .locator("section#fotos [data-passa-fotos]")
+    .evaluate((el) => el.scrollWidth - el.clientWidth);
+  test.skip(sobra <= 1, "as fotos cabem todas na fileira: não há ponto");
+  await expect(page.locator("section#fotos [data-ponto]").first()).toBeVisible();
 
   const apagado = page.locator('section#fotos [data-ponto]:not([aria-current="true"]) span').first();
   await expect(apagado).toBeAttached();
