@@ -4,6 +4,7 @@ import Image from "next/image";
 import { site, preenchido } from "@/content/site";
 import { asset } from "@/lib/asset";
 import { Botao } from "./Botao";
+import { FundoVideo } from "./FundoVideo";
 import { FormReserva } from "./FormReserva";
 import { Sulcos } from "./Sulcos";
 
@@ -20,6 +21,11 @@ export function Hero() {
   const temLogo =
     preenchido(site.logotipo) &&
     existsSync(join(process.cwd(), "public", site.logotipo.valor));
+  // Same build-time check, same reason: the footage is the house's and is not in
+  // the repository, so the hero has to read as finished without it.
+  const temVideo =
+    preenchido(site.videoHero) &&
+    existsSync(join(process.cwd(), "public", "video", site.videoHero.valor));
   const cidade = preenchido(site.endereco)
     ? `${site.endereco.valor.cidade} · ${site.endereco.valor.uf}`
     : null;
@@ -37,6 +43,20 @@ export function Hero() {
       id="hero"
       className="grao relative flex flex-col justify-center overflow-hidden px-6 pt-14 pb-16 sm:min-h-[100svh] sm:px-10 sm:py-24"
     >
+      {temVideo && preenchido(site.videoHero) && (
+        <>
+          <FundoVideo src={asset(`/video/${site.videoHero.valor}`)} />
+          {/* The type measures ~12:1 against musgo and nothing at all against raw
+              footage, so the reel never reaches the page undiluted: faint, and under
+              the house's own green, heaviest where the booking form sits. */}
+          <div
+            data-cortina
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-musgo via-musgo/85 to-musgo/70"
+          />
+        </>
+      )}
+
       {/* The record sits off the right edge on a phone and centres as the page widens. */}
       <Sulcos className="gira pointer-events-none absolute -right-1/3 top-1/2 h-[130vw] w-[130vw] -translate-y-1/2 text-areia opacity-[0.09] sm:-right-[10%] sm:h-[85vh] sm:w-[85vh] lg:right-[6%]" />
 
