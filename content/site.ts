@@ -216,15 +216,19 @@ export const site = {
       },
       {
         id: "som",
-        arquivo: null,
+        arquivo: "som.jpg",
         pedido: "O sistema de som — toca-discos e caixas em primeiro plano.",
-        alt: "Toca-discos e caixas de som do VINIL",
+        alt:
+          "Toca-discos ligado atrás de uma tábua de costela, farofa e bolinhos, " +
+          "sob o logotipo do VINIL na parede",
       },
       {
         id: "discos",
-        arquivo: null,
+        arquivo: "discos.jpg",
         pedido: "A parede de discos, ou alguém escolhendo o disco.",
-        alt: "Acervo de discos do VINIL",
+        alt:
+          "Mojito ao lado de um disco de vinil sobre a mesa, com o logotipo do " +
+          "VINIL iluminado na parede",
       },
       {
         id: "prato",
@@ -246,8 +250,10 @@ export const site = {
         alt: "Salão do VINIL à noite",
       },
     ] as ReadonlyArray<FotoSlot>,
-    // prato and drink: provisional, sent by Pedro on 2026-09-25 (734×1048, below the
-    // 1600px the brief asks for). The rest is still owed by the house.
+    // som and discos: the house's own, sent on 2026-10-30 at 1024×1024 — square, so
+    // the 4:5 frame crops the sides. prato and drink are still the provisional pair
+    // from 2026-09-25 (734×1048, below the 1600px the brief asks for). fachada and
+    // salao the house still owes.
     fonte: "⟨A PREENCHER: o dono — o grupo não produz foto (plano-pmv.md §1)⟩",
     status: "a-preencher",
   } as Dado<ReadonlyArray<FotoSlot>>,

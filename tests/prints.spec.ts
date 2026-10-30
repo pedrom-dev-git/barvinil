@@ -4,6 +4,12 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { site, preenchido } from "../content/site";
 
+/** Photos the house has actually delivered — they are not in git, so this is a check
+ *  against the working copy, not a number anyone can hard-code and forget. */
+const COM_FOTO = (site.fotos.valor ?? []).filter(
+  (f) => f.arquivo !== null && existsSync(join(process.cwd(), "public", "fotos", f.arquivo)),
+).length;
+
 /**
  * The screenshots the group puts in a presentation, captured by a suite instead of
  * by hand. Item (e) of the presentation asks for "modelos do resultado", and it will
@@ -196,19 +202,19 @@ test.describe("prints", () => {
       for (const id of ["hero", "casa", "fotos", "onde", "reservar"]) {
         await expect(page.locator(`section#${id}`)).toBeAttached();
       }
-      await expect(page.locator("section#fotos li img")).toHaveCount(2);
+      await expect(page.locator("section#fotos li img")).toHaveCount(COM_FOTO);
       await expect(page.getByRole("contentinfo")).toContainText(/prot[óo]tipo/i);
       await guardar(page, "07-desktop-pagina-completa.png", { fullPage: true });
     });
 
     test("08 · a casa e a galeria", async ({ page }) => {
       await pronta(page);
-      // Two photos, and the house still owes four — but the slideshow passes only
-      // what exists. An empty frame caught in a print reads as a broken image, not
-      // as "em andamento", and the slide has a caption to say that part.
+      // The house still owes photos — but the slideshow passes only what exists. An
+      // empty frame caught in a print reads as a broken image, not as "em andamento",
+      // and the slide has a caption to say that part.
       const molduras = page.locator("section#fotos li");
-      await expect(molduras).toHaveCount(2);
-      await expect(molduras.locator("img")).toHaveCount(2);
+      await expect(molduras).toHaveCount(COM_FOTO);
+      await expect(molduras.locator("img")).toHaveCount(COM_FOTO);
 
       const casa = await page.locator("section#casa").boundingBox();
       const fotos = await page.locator("section#fotos").boundingBox();
