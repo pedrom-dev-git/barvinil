@@ -52,7 +52,7 @@ export function Hero() {
           <div
             data-cortina
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-musgo via-musgo/85 to-musgo/70"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-musgo via-musgo/92 to-musgo/80"
           />
         </>
       )}
