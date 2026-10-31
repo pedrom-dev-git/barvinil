@@ -27,6 +27,8 @@ function dataPorExtenso(iso: string): string {
  * and nothing on the page says when the house opens. Moving the window is these two
  * lines — and a window that crossed midnight would need more than that. */
 const ABRE = "19:30";
+/** Breathing room under the send button once it has been brought on screen. */
+const FOLGA = 24;
 const FECHA = "22:30";
 
 /** Every half hour from ABRE to FECHA, both ends included. */
@@ -71,7 +73,7 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
   const [data, setData] = useState("");
   const [hora, setHora] = useState("");
   const calendario = useRef<HTMLInputElement>(null);
-  const painel = useRef<HTMLDivElement>(null);
+  const botaoEnviar = useRef<HTMLButtonElement>(null);
 
   // Desktop nicety, never the only path: Chrome opens its calendar from the icon
   // alone, so a click anywhere on the field gets the guest the same picker. On a
@@ -90,12 +92,28 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
     setHoje(hojeLocal());
     const abrindo = !aberto;
     setAberto(abrindo);
-    // The panel eases open over 500ms, so it is measured after it has arrived.
-    // On a real phone the fold is ~664px, not the 844px of a chromeless viewport:
-    // opened from the hero, the submit button lands below it.
-    if (abrindo) {
-      setTimeout(() => painel.current?.scrollIntoView({ block: "nearest" }), 550);
-    }
+    if (!abrindo) return;
+
+    // What has to reach the screen is the END of the form. On a real phone the fold
+    // is ~664px, not the 844px of a chromeless viewport, and the panel is taller
+    // than that — bringing its top into view leaves the guest with a form they can
+    // fill in and cannot send.
+    //
+    // 300ms into a 500ms opening: ease-suave is nearly done settling by then, so the
+    // button is within a few pixels of where it lands, and the scroll starts while
+    // the last of the growth is still happening — one motion rather than two. Fired
+    // after everything had stopped, and instantly, it read as a second lurch.
+    const suave = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setTimeout(() => {
+      const alvo = botaoEnviar.current?.getBoundingClientRect();
+      if (!alvo) return;
+      // The window, and nothing else. scrollIntoView also scrolls every scrollable
+      // ancestor, and one of them is the panel's own overflow-hidden wrapper — mid
+      // animation it still holds more than it shows, so it swallowed the scroll and
+      // the page never moved.
+      const faltando = Math.ceil(alvo.bottom + FOLGA - window.innerHeight);
+      if (faltando > 0) window.scrollBy({ top: faltando, behavior: suave ? "smooth" : "auto" });
+    }, suave ? 300 : 0);
   }
 
   function enviar(e: FormEvent<HTMLFormElement>) {
@@ -156,7 +174,6 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
           `invisible`: out of reach for keyboard and screen readers, not just shut. */}
       <div
         id={`${id}-painel`}
-        ref={painel}
         data-painel-reserva
         inert={!aberto}
         className={`order-2 grid w-full text-left transition-[grid-template-rows,opacity,visibility] duration-500 ease-suave sm:order-3 sm:basis-full ${
@@ -277,7 +294,7 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
                 />
               </div>
 
-              <button type="submit" className={`${classeBotao("cheio")} w-full`}>
+              <button type="submit" ref={botaoEnviar} className={`${classeBotao("cheio")} w-full`}>
                 Enviar pelo WhatsApp
               </button>
             </form>
