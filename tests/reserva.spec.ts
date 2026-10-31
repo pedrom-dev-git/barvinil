@@ -248,4 +248,57 @@ test.describe("opening motion", () => {
     await page.goto("/");
     expect(await duracao(page)).toBeLessThan(0.05);
   });
+
+  test("opening it does not throw the page up the screen", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: null });
+    await page.goto("/");
+    await page.locator("section#hero").getByRole("button", { name: /reservar mesa/i }).click();
+
+    // Counted off scroll events, not sampled off frames. A sampler misses what it
+    // was not awake for, and under a full suite it is asleep a lot — it would call
+    // a busy machine a jump. Scroll events are queued and all delivered: an animated
+    // scroll fires one per frame it moves, and a teleport fires exactly one.
+    const movimento = await page.evaluate(
+      () =>
+        new Promise<{ eventos: number; total: number }>((resolve) => {
+          const inicio = window.scrollY;
+          let eventos = 0;
+          const contar = () => eventos++;
+          addEventListener("scroll", contar, { passive: true });
+          setTimeout(() => {
+            removeEventListener("scroll", contar);
+            resolve({ eventos, total: Math.abs(window.scrollY - inicio) });
+          }, 1600);
+        }),
+    );
+
+    // Whether the page has to move at all is the viewport's business: on a tall one
+    // the whole form is already on screen and the right amount of scrolling is none.
+    test.skip(movimento.total === 0, "o formulário já coube na tela: não há o que rolar");
+
+    expect(movimento.eventos, "a página saltou em vez de rolar").toBeGreaterThan(1);
+  });
+
+  test("and leaves the send button where the guest can reach it", async ({ page }, info) => {
+    test.skip(info.project.name !== "mobile", "é a dobra do celular que corta o botão");
+    // 664px, not the 844 of a chromeless viewport: that is what an iPhone leaves
+    // once its address bar and its toolbar have taken their share, and it is the
+    // screen the guest actually fills this form on.
+    await page.setViewportSize({ width: 390, height: 664 });
+    await page.emulateMedia({ reducedMotion: null });
+    await page.goto("/");
+    await page.locator("section#hero").getByRole("button", { name: /reservar mesa/i }).click();
+
+    const enviar = page.locator("section#hero").getByRole("button", { name: /enviar pelo/i });
+    await expect(enviar).toBeVisible();
+    // The panel is taller than a phone screen, so scrolling its top into view leaves
+    // the button that sends the booking below the fold — a form the guest fills in
+    // and cannot send. What has to end up on screen is the end of the form.
+    await page.waitForTimeout(1200);
+
+    const caixa = await enviar.boundingBox();
+    expect(caixa, "o botão de enviar sumiu da página").not.toBeNull();
+    expect(caixa!.y).toBeGreaterThanOrEqual(0);
+    expect(caixa!.y + caixa!.height).toBeLessThanOrEqual(664);
+  });
 });
