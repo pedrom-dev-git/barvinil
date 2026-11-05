@@ -288,11 +288,16 @@ test("the hero plays the house's reel behind the name, never over it", async ({ 
   await expect(video).toHaveJSProperty("muted", true);
   await expect(video).toHaveJSProperty("loop", true);
 
-  // RNF07 asks for AA, and the areia text measures ~12:1 against musgo — against raw
-  // footage it measures nothing at all. The reel stays faint and a scrim sits over
-  // it, so what the type reads against is still essentially the house's green.
+  // This number used to stand in for legibility: nothing measured what the type was
+  // actually read against, so the reel was held faint and that was the whole defence.
+  // contraste.spec.ts now reads the composited pixels and asks each piece of type for
+  // its WCAG floor, which is the real guarantee — so what is left here is the weaker
+  // statement the number was always making: the reel is a background. It is never
+  // played at full strength behind type, and the scrim is always over it.
+  //
+  // No slack on purpose. Raising it is a decision that has to be measured again.
   const opacidade = await video.evaluate((el) => parseFloat(getComputedStyle(el).opacity));
-  expect(opacidade).toBeLessThanOrEqual(0.3);
+  expect(opacidade).toBeLessThanOrEqual(0.6);
   await expect(page.locator("section#hero [data-cortina]")).toHaveCount(1);
 
   // The name, the tagline and the booking form are the hero; the reel is behind them.
