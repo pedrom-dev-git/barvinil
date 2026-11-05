@@ -107,6 +107,23 @@ test("the preview card is exported with an address a chat can fetch", () => {
   ).toBe(true);
 });
 
+test("the preview card points at the address this repo publishes", () => {
+  // The origin is a build-time constant with a default written into app/layout.tsx,
+  // and nothing on the page can tell when it is wrong: the page itself looks perfect
+  // while every card fetches a host that is not ours. The README is where this repo
+  // states where the site lives, so that is what the card is held against — move the
+  // deploy and this fails instead of the link quietly going bare in somebody's chat.
+  const readme = readFileSync(join(__dirname, "..", "README.md"), "utf8");
+  const publicado = readme.match(/https:\/\/[a-z0-9.-]+\.github\.io[^\s>)]*/i)?.[0];
+  expect(publicado, "o README não diz onde o site mora").toBeTruthy();
+
+  const url = html().match(/<meta property="og:image" content="([^"]+)"/)?.[1];
+  expect(url, "o HTML exportado não traz og:image").toBeTruthy();
+  expect(new URL(url!).origin, "o card aponta para outra origem").toBe(
+    new URL(publicado!).origin,
+  );
+});
+
 test("the page asks search engines to stay away", () => {
   // content/site.ts is mostly `fonte-publica`: address, phone and menu scraped from
   // the bar's public profiles, not confirmed by the owner. Until he signs off, this
