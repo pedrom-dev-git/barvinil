@@ -88,6 +88,25 @@ test("the logo and the favicon ship with the repo, so the deploy wears them", ()
   expect(doc).toMatch(new RegExp(`rel="icon"[^>]*href="${BASE}/icon\\.png`));
 });
 
+test("the preview card is exported with an address a chat can fetch", () => {
+  // This is where the base path bites hardest. A stylesheet that loses /barvinil
+  // shows up as an unstyled page and somebody notices in a second; a card URL that
+  // loses it fetches nothing, and the only symptom is that the link pastes bare into
+  // WhatsApp — which nobody sees until the owner sends it to someone.
+  const url = html().match(/<meta property="og:image" content="([^"]+)"/)?.[1];
+  expect(url, "o HTML exportado não traz og:image").toBeTruthy();
+  expect(url, "og:image tem de ser uma URL absoluta").toMatch(/^https:\/\/[^/]+\//);
+
+  const caminho = new URL(url!).pathname;
+  expect(caminho, `og:image fora do base path: ${caminho}`).toMatch(
+    new RegExp(`^${BASE}/`),
+  );
+  expect(
+    existsSync(join(OUT, caminho.slice(BASE.length))),
+    `${caminho} não foi exportado para out/`,
+  ).toBe(true);
+});
+
 test("the page asks search engines to stay away", () => {
   // content/site.ts is mostly `fonte-publica`: address, phone and menu scraped from
   // the bar's public profiles, not confirmed by the owner. Until he signs off, this

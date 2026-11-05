@@ -203,9 +203,9 @@ test("the gallery leads with the photos it has, and never shows a broken one", a
 });
 
 test("the house section speaks with the owner's own words", async ({ page }) => {
-  // The lead line and the paragraph under it are both his, so this reads them off
+  // The lead line and the paragraphs under it are all his, so this reads them off
   // content/site.ts instead of pinning the copy here: when he changes a word, the
-  // page is what has to follow, not the test. What is asserted is that neither of
+  // page is what has to follow, not the test. What is asserted is that none of
   // them is sitting in the file unrendered — a draft nobody approved never shows,
   // and words he did approve must not stay hidden either.
   expect(
@@ -215,7 +215,56 @@ test("the house section speaks with the owner's own words", async ({ page }) => 
 
   const casa = page.locator("section#casa");
   await expect(casa.getByText(site.descricao.valor ?? "", { exact: true })).toBeVisible();
-  await expect(casa.getByText(site.historia.valor ?? "", { exact: true })).toBeVisible();
+
+  // One paragraph per break he wrote. Run together into a single block the manifesto
+  // is ~90 words with no landing anywhere, and on a 390px phone that is sixteen lines
+  // of unbroken type — the shape of text people scroll past rather than read.
+  const paragrafos = site.historia.valor ?? [];
+  expect(paragrafos.length, "a história do dono vem em parágrafos").toBeGreaterThan(1);
+  for (const p of paragrafos) {
+    await expect(casa.getByText(p, { exact: true })).toBeVisible();
+  }
+});
+
+test("no paragraph on the page is a wall of text", async ({ page }) => {
+  // A limit on the page, not on one section: the next long thing the house sends is
+  // pasted in the same way the manifesto was, and this is what catches it.
+  const paragrafos = await page.locator("main p").allInnerTexts();
+  expect(paragrafos.length, "a página não tem parágrafo nenhum").toBeGreaterThan(0);
+
+  for (const texto of paragrafos) {
+    const palavras = texto.trim().split(/\s+/).length;
+    expect.soft(palavras, `parágrafo de ${palavras} palavras: "${texto.slice(0, 48)}…"`)
+      .toBeLessThanOrEqual(55);
+  }
+});
+
+test("the link carries a preview card into the chat it is pasted into", async ({ page }) => {
+  // RNF01 fixes the arrival: the guest comes from Instagram, on a phone. That means
+  // the link is pasted into a chat far more often than it is typed — and a page with
+  // no og:image pastes as a grey rectangle with a URL under it, which in a WhatsApp
+  // thread reads as a link somebody broke.
+  const og = (p: string) => page.locator(`meta[property="og:${p}"]`);
+  await expect(og("title")).toHaveCount(1);
+
+  const url = await og("image").getAttribute("content");
+  expect(url, "sem og:image o link cola como um retângulo cinza").toBeTruthy();
+  // Absolute by definition: whatever fetches the card has no page of ours open to
+  // resolve a relative path against.
+  expect(url, "og:image relativo não resolve fora do site").toMatch(/^https:\/\//);
+
+  const arquivo = join(process.cwd(), "public", new URL(url!).pathname.split("/").pop()!);
+  expect(existsSync(arquivo), `${url} não existe em public/`).toBe(true);
+
+  // Declared, so the chat lays out the wide card instead of a thumbnail beside text.
+  await expect(og("image:width")).toHaveAttribute("content", "1200");
+  await expect(og("image:height")).toHaveAttribute("content", "630");
+
+  // The same statement the footer makes, on the one surface where this page is seen
+  // without its footer. A card forwarded on from there must not read as the house's
+  // official site — it comes out with the footer, when the owner approves the copy.
+  const descricao = await og("description").getAttribute("content");
+  expect(descricao, "o card tem de dizer o que a página é").toMatch(/prot[óo]tipo/i);
 });
 
 /** Which reel is published is a decision that changes, so the hero has to stand up
