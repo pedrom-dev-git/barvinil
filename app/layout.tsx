@@ -37,6 +37,17 @@ const tagline = preenchido(site.tagline) ? site.tagline.valor : "";
 const cidade =
   preenchido(site.endereco) && `${site.endereco.valor.cidade}-${site.endereco.valor.uf}`;
 
+// Where the deploy answers from. A card URL is absolute by definition: whatever
+// fetches it — WhatsApp, Instagram, a messaging app nobody here has heard of — has
+// no page of ours open to resolve a relative path against. So even served from
+// localhost the card names the published file, which is the one that exists.
+const ORIGEM = process.env.NEXT_PUBLIC_SITE_ORIGIN ?? "https://pedrom-dev-git.github.io";
+
+// The same statement components/Rodape.tsx makes, for the one surface where this
+// page travels without its footer: a link pasted into a chat. It comes out with the
+// footer, when the owner approves the copy and the last `fonte-publica` is gone.
+const AVISO = "Protótipo acadêmico do Projeto Integrador Web — não é o site oficial da casa.";
+
 export const metadata: Metadata = {
   title: `${nome}${cidade ? ` · ${cidade}` : ""}`,
   description: tagline,
@@ -46,11 +57,25 @@ export const metadata: Metadata = {
   // public/robots.txt says the same thing to crawlers that never read the HTML.
   robots: { index: false, follow: false },
   ...(temIcone && { icons: { icon: asset("/icon.png") } }),
+  metadataBase: new URL(ORIGEM),
   openGraph: {
     title: nome,
-    description: tagline,
+    description: `${tagline ? `${tagline} · ` : ""}${AVISO}`,
     locale: "pt_BR",
     type: "website",
+    // RNF01 says the guest arrives from Instagram, on a phone — so this link is
+    // pasted into a chat far more often than it is typed. Without a card that paste
+    // is a grey rectangle with a URL under it, which reads as a link somebody broke.
+    // 1200x630 is the wide card every chat app lays out; declaring the size is what
+    // makes it reserve that box instead of a thumbnail beside the text.
+    images: [
+      {
+        url: asset("/og.jpg"),
+        width: 1200,
+        height: 630,
+        alt: `Logotipo do ${nome} sobre uma mesa da casa, com toca-discos ao fundo`,
+      },
+    ],
   },
 };
 

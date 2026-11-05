@@ -42,9 +42,14 @@ export function ACasa() {
         )}
 
         {preenchido(site.historia) && (
-          <p className="mt-8 max-w-prose text-base leading-relaxed text-areia-suave">
-            {site.historia.valor}
-          </p>
+          // His paragraphs, kept apart. space-y rather than a margin on each one, so
+          // the gap between them is a single decision and the first still hangs off
+          // the display line above by the mt-8 this block owns.
+          <div className="mt-8 max-w-prose space-y-4 text-base leading-relaxed text-areia-suave">
+            {site.historia.valor.map((paragrafo) => (
+              <p key={paragrafo.slice(0, 32)}>{paragrafo}</p>
+            ))}
+          </div>
         )}
 
         {cartoes.length > 0 && (

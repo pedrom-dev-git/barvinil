@@ -212,8 +212,10 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
         // ink sits where mt-4 on a tight row would have put it.
         <div className="mt-2 flex items-center justify-center">
           {Array.from({ length: pontos }, (_, i) => (
-            // 1.5 units of ink in a 44px-tall target — small on the page, still a
-            // thumb-sized button (landing.spec.ts asserts the 44px on the phone).
+            // 2 units of ink in a 48px-tall target — small on the page, still a
+            // thumb-sized button. 48 and not 44: every other target on the page is
+            // min-h-12, and a dot sitting exactly on the 44px floor measured 43.9998
+            // the moment the section above it landed on a fractional pixel row.
             <button
               key={quadros[i]?.id ?? i}
               type="button"
@@ -221,7 +223,7 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
               aria-current={i === aceso}
               aria-label={`Foto ${i + 1} de ${quadros.length}`}
               onClick={() => irPara(i)}
-              className="grid h-11 w-7 place-items-center"
+              className="grid h-12 w-7 place-items-center"
             >
               {/* At areia/30 the dim dot was 2,40:1 and said nothing about there
                   being more photos. It is a control: 3:1, like any other. */}

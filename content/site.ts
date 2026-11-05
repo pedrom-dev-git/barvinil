@@ -112,19 +112,27 @@ export const site = {
     status: "fonte-publica",
   } as Dado<string>,
 
-  /** The house's own story, in the owner's words. Nobody else can write this. */
+  /**
+   * The house's own story, in the owner's words. Nobody else can write this.
+   *
+   * One entry per paragraph, and the breaks are the ones he wrote — he sent the
+   * manifesto in blocks, and running them together made ~90 unbroken words, which
+   * on a phone is sixteen lines nobody reaches the end of.
+   */
   historia: {
-    valor:
+    valor: [
       "Onde cada faixa em vinil não é trilha de fundo, mas protagonista. Onde o copo " +
-      "tem nome, o prato tem história e a arquitetura tem memória. Um sobrado da década " +
-      "de 40, com janelas de madeira azul e sacada de ferro, guarda em suas paredes " +
-      "texturizadas o mesmo princípio que move o som em vinil: o valor da presença, da " +
-      "escuta, do bom gosto. Aqui, cada detalhe arquitetônico é parte da experiência – " +
-      "não para mirar o passado, mas para valorizar o presente com densidade, com " +
-      "intenção. Não estamos aqui para servir mais do mesmo.",
+        "tem nome, o prato tem história e a arquitetura tem memória.",
+      "Um sobrado da década de 40, com janelas de madeira azul e sacada de ferro, " +
+        "guarda em suas paredes texturizadas o mesmo princípio que move o som em " +
+        "vinil: o valor da presença, da escuta, do bom gosto.",
+      "Aqui, cada detalhe arquitetônico é parte da experiência – não para mirar o " +
+        "passado, mas para valorizar o presente com densidade, com intenção. Não " +
+        "estamos aqui para servir mais do mesmo.",
+    ],
     fonte: DONO,
     status: "confirmado",
-  } as Dado<string>,
+  } as Dado<ReadonlyArray<string>>,
 
   /**
    * The wordmark file, expected at public/<valor>.
