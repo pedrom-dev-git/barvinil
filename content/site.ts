@@ -141,7 +141,12 @@ export const site = {
         "vinil: o valor da presença, da escuta, do bom gosto.",
       "Aqui, cada detalhe arquitetônico é parte da experiência – não para mirar o " +
         "passado, mas para valorizar o presente com densidade, com intenção.",
+      "Existimos para quem sabe o valor de ouvir – e de sentir.",
     ],
+    // The last line was not in what reached us on 30/10 — it was recovered from the
+    // menu the house publishes on its own Drive (Cardapio.pdf, 04/12/2025), whose
+    // first page carries this manifesto word for word. Same text, same house, one
+    // sentence longer, and it is the one he closes on.
     fonte: DONO,
     status: "confirmado",
   } as Dado<ReadonlyArray<string>>,
@@ -219,8 +224,11 @@ export const site = {
    * versões"): same id, same link, same QR code on the printed menu, new PDF. So he
    * swaps the menu himself and this page never needs a deploy to follow him.
    *
-   * NOT verified that this file already holds the 2026 menu he sent on 2026-11-05 —
-   * the link came off bio.site, and nobody here can see inside his Drive.
+   * ⚠️ VERIFIED 2026-11-05, and it is OUT OF DATE. The file behind this id is public
+   * and downloads without a login — but it is `Cardapio.pdf`, nine pages made in Word
+   * on 04/12/2025, not the ten-page designed menu the house sent on 2026-11-05. The
+   * prices still match; the document does not. Nothing here can fix that: the owner
+   * uploads the new PDF as a new version of this same file and the page follows him.
    */
   cardapio: {
     valor:
