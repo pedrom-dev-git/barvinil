@@ -40,6 +40,9 @@ const BIO_SITE = "bio.site/Vinilbar, consultado em 2026-09-04";
 const INSTAGRAM = "Instagram @barvinil, consultado em 2026-09-04";
 const MAPS = "Google Maps, via o link do bio.site, consultado em 2026-09-04";
 const DONO = "material oficial do dono, entregue via Pedro em 2026-10-30";
+/** The house's printed menu — its own words about its own kitchen, by definition. */
+const CARDAPIO_2026 =
+  "cardápio oficial (menu_VINIL2026_FINAL), entregue via Pedro em 2026-11-05";
 
 export type FotoSlot = {
   readonly id: string;
@@ -64,19 +67,22 @@ export const site = {
   } as Dado<string>,
 
   tagline: {
-    valor: "Onde o som e o sabor se encontram",
-    // Wording by Pedro (2026-09-25), from the bio.site line "Onde o som e a
-    // gastronomia se encontram" and the brandbook's "som + sabor + espaço".
-    // Still unconfirmed by the owner, so it stays `fonte-publica`.
-    fonte: BIO_SITE,
-    status: "fonte-publica",
+    valor: "Onde o tempo desacelera, o copo tem nome e a música tem sabor.",
+    // The line the house prints on the welcome page of its own menu. It replaces
+    // "Onde o som e o sabor se encontram", which Pedro wrote on 2026-09-25 out of
+    // the bio.site wording and the brandbook — a good line, but ours, and the page
+    // had been saying it in the house's voice while no one had confirmed it.
+    fonte: CARDAPIO_2026,
+    status: "confirmado",
   } as Dado<string>,
 
   /** The line the house section opens with, set large. His words, not ours. */
   descricao: {
-    valor: "Um bar onde o tempo desacelera.",
-    // Replaces the Instagram wording ("Um refúgio urbano onde o som, o sabor e o
-    // espaço se encontram em harmonia"): that one was scraped, this one he wrote.
+    valor: "Não estamos aqui para servir mais do mesmo.",
+    // The last line of his manifesto, pulled up to open the section — the sentence
+    // he closes on is the one that says what the house is for. It was "Um bar onde
+    // o tempo desacelera", which is his too, but the tagline above now carries the
+    // menu's "onde o tempo desacelera" and the page was saying it twice.
     fonte: DONO,
     status: "confirmado",
   } as Dado<string>,
@@ -101,9 +107,16 @@ export const site = {
   } as Dado<string>,
 
   cozinha: {
-    valor: "Coquetelaria autoral, petiscos e pratos de inspiração italiana.",
-    fonte: INSTAGRAM,
-    status: "fonte-publica",
+    valor:
+      "Tábuas de carne defumada de 8 a 10 horas em lenha de macieira, entradas, " +
+      "risotos e hambúrgueres. Coquetelaria autoral, chopp artesanal e vinhos.",
+    // Read off the printed menu, which is the house describing its own kitchen. It
+    // replaces the Instagram line "Coquetelaria autoral, petiscos e pratos de
+    // inspiração italiana" — scraped, and wrong about the backbone of the menu:
+    // the italian end is real (arancini, polenta, risotos, caprese) but what the
+    // kitchen is built around is smoke.
+    fonte: CARDAPIO_2026,
+    status: "confirmado",
   } as Dado<string>,
 
   programacao: {
@@ -127,8 +140,7 @@ export const site = {
         "guarda em suas paredes texturizadas o mesmo princípio que move o som em " +
         "vinil: o valor da presença, da escuta, do bom gosto.",
       "Aqui, cada detalhe arquitetônico é parte da experiência – não para mirar o " +
-        "passado, mas para valorizar o presente com densidade, com intenção. Não " +
-        "estamos aqui para servir mais do mesmo.",
+        "passado, mas para valorizar o presente com densidade, com intenção.",
     ],
     fonte: DONO,
     status: "confirmado",
@@ -197,6 +209,19 @@ export const site = {
     status: "fonte-publica",
   } as Dado<{ handle: string; url: string }>,
 
+  /**
+   * A link, not a page: plano-pmv.md §1 puts "cardápio online" out of scope, and the
+   * menu is a designed PDF the house reprints — nothing a landing should be holding
+   * a copy of.
+   *
+   * What matters is that the address never changes. It points at a Drive FILE ID,
+   * and Drive lets the owner upload a new version of that same file ("Gerenciar
+   * versões"): same id, same link, same QR code on the printed menu, new PDF. So he
+   * swaps the menu himself and this page never needs a deploy to follow him.
+   *
+   * NOT verified that this file already holds the 2026 menu he sent on 2026-11-05 —
+   * the link came off bio.site, and nobody here can see inside his Drive.
+   */
   cardapio: {
     valor:
       "https://drive.google.com/file/d/1dP45DoZYbP4ycMndidF3iPlfTGRVUieL/view?usp=drivesdk",

@@ -83,8 +83,11 @@ export function Hero() {
           {temLogo ? cidade : `hi-fi bar${cidade ? ` · ${cidade}` : ""}`}
         </p>
 
+        {/* Wider from sm up than the old six-word tagline needed: the house's own
+            line is sixty characters, and held at max-w-lg it broke into four short
+            script lines with a ragged right edge — a column, where it is a phrase. */}
         {preenchido(site.tagline) && (
-          <p className="mt-6 max-w-lg text-balance font-destaque text-3xl leading-[1.2] text-areia sm:text-5xl lg:text-6xl">
+          <p className="mt-6 max-w-lg text-balance font-destaque text-3xl leading-[1.2] text-areia sm:max-w-xl sm:text-5xl lg:max-w-3xl lg:text-6xl">
             {site.tagline.valor}
           </p>
         )}
