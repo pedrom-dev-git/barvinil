@@ -1,4 +1,20 @@
 import { test, expect, type Locator } from "@playwright/test";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { site, preenchido } from "../content/site";
+
+/**
+ * Whether this checkout has a reel at all — a build-time fact, the same one
+ * components/Hero.tsx decides on, and the same check tests/landing.spec.ts makes.
+ *
+ * It has to be answered off the disk and never off the page: FundoVideo is a client
+ * component that mounts the <video> from an effect, so counting the element right
+ * after goto() reads zero whether the file is missing or merely late — and a test
+ * that skips itself on a race reports green having measured nothing.
+ */
+const temReel =
+  preenchido(site.videoHero) &&
+  existsSync(join(process.cwd(), "public", "video", site.videoHero.valor));
 
 /**
  * RNF07 asks for WCAG AA, and axe reports the page clean — but axe does not check
@@ -131,4 +147,130 @@ test("o ponto apagado do passa-fotos é visível (3:1)", async ({ page }) => {
   const apagado = page.locator('section#fotos [data-ponto]:not([aria-current="true"]) span').first();
   await expect(apagado).toBeAttached();
   expect(await contraste(apagado, "background-color")).toBeGreaterThanOrEqual(3);
+});
+
+/**
+ * The type over the reel, measured off the pixels.
+ *
+ * Everything above reads computed colour, and computed colour is blind to a video:
+ * the reel is pixels the @theme knows nothing about, and the scrim over it is a
+ * gradient, so what the type is read against changes with the frame AND with how
+ * far up the hero it sits. Nothing here can be derived — it has to be looked at.
+ *
+ * The type is taken off the screen first, so what is captured is exactly the
+ * background it is read against, and each piece is held against the BRIGHTEST pixel
+ * under it: light type on a light frame is the failure, never the average.
+ */
+test("o topo se lê sobre o reel, não sobre o tema (1.4.3 / 1.4.11)", async ({ page }) => {
+  test.skip(!temReel, "sem reel neste checkout — não há o que compor");
+
+  const video = page.locator("section#hero video");
+  await expect(video).toBeAttached();
+  await page.waitForFunction(() => {
+    const v = document.querySelector<HTMLVideoElement>("section#hero video");
+    return !!v && v.readyState >= 2 && v.videoWidth > 0;
+  });
+
+  // Floors are WCAG's: 4,5:1 for text under 24px, 3:1 for large type and for the
+  // wordmark, which is a graphic that carries meaning (1.4.11).
+  const alvos = [
+    { nome: "CANOAS · RS", sel: "section#hero p:first-of-type", piso: 4.5 },
+    { nome: "tagline", sel: "section#hero p.font-destaque", piso: 3 },
+    { nome: "botão vazado", sel: "section#hero a[target='_blank']", piso: 4.5 },
+    { nome: "logotipo", sel: "section#hero h1", piso: 3 },
+  ];
+
+  const hero = await page.locator("section#hero").boundingBox();
+  expect(hero, "o topo não está na página").not.toBeNull();
+
+  const medidos: { nome: string; piso: number; tinta: RGBA; caixa: number[] }[] = [];
+  for (const alvo of alvos) {
+    const el = page.locator(alvo.sel).first();
+    if ((await el.count()) === 0) continue;
+    const caixa = await el.boundingBox();
+    if (!caixa) continue;
+    // The wordmark is an image and has no colour of its own; it is drawn in areia,
+    // which is what body carries.
+    const texto =
+      alvo.nome === "logotipo"
+        ? await page.locator("body").evaluate((el) => getComputedStyle(el).color)
+        : await propriedade(el, "color");
+    medidos.push({
+      nome: alvo.nome,
+      piso: alvo.piso,
+      tinta: cor(texto),
+      caixa: [caixa.x - hero!.x, caixa.y - hero!.y, caixa.width, caixa.height],
+    });
+  }
+  expect(medidos.length, "nenhum texto do topo foi encontrado").toBeGreaterThan(0);
+
+  await page.locator("section#hero .z-10").evaluate((el: HTMLElement) => {
+    el.style.visibility = "hidden";
+  });
+
+  const duracao = await video.evaluate((v: HTMLVideoElement) => v.duration || 20);
+  const pior = new Map(medidos.map((m) => [m.nome, Infinity]));
+
+  for (const fracao of [0, 0.35, 0.7]) {
+    await video.evaluate((v: HTMLVideoElement, t) => {
+      v.pause();
+      v.currentTime = t;
+      return new Promise((pronto) => v.addEventListener("seeked", pronto, { once: true }));
+    }, fracao * duracao);
+
+    const png = (await page.locator("section#hero").screenshot()).toString("base64");
+    const claros = await page.evaluate(
+      async ({ png, caixas }) => {
+        const img = new Image();
+        img.src = `data:image/png;base64,${png}`;
+        await img.decode();
+        const cv = document.createElement("canvas");
+        [cv.width, cv.height] = [img.width, img.height];
+        const cx = cv.getContext("2d", { willReadFrequently: true })!;
+        cx.drawImage(img, 0, 0);
+        // The capture is in device pixels; the boxes came back in CSS pixels.
+        const escala = img.width / document.querySelector("section#hero")!.clientWidth;
+        const lum = (r: number, g: number, b: number) => {
+          const f = (v: number) => {
+            const s = v / 255;
+            return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+          };
+          return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+        };
+
+        return caixas.map(([cx0, cy0, cw, ch]) => {
+          const x = Math.max(0, Math.round(cx0 * escala));
+          const y = Math.max(0, Math.round(cy0 * escala));
+          const w = Math.min(img.width - x, Math.round(cw * escala));
+          const h = Math.min(img.height - y, Math.round(ch * escala));
+          if (w <= 0 || h <= 0) return null;
+          const d = cx.getImageData(x, y, w, h).data;
+          let claro: number[] | null = null;
+          let maior = -1;
+          for (let i = 0; i < d.length; i += 4) {
+            const l = lum(d[i], d[i + 1], d[i + 2]);
+            if (l > maior) {
+              maior = l;
+              claro = [d[i], d[i + 1], d[i + 2]];
+            }
+          }
+          return claro;
+        });
+      },
+      { png, caixas: medidos.map((m) => m.caixa) },
+    );
+
+    claros.forEach((px, i) => {
+      if (!px) return;
+      const m = medidos[i];
+      const r = razao(m.tinta, { r: px[0], g: px[1], b: px[2], a: 1 });
+      pior.set(m.nome, Math.min(pior.get(m.nome)!, r));
+    });
+  }
+
+  for (const m of medidos) {
+    expect
+      .soft(pior.get(m.nome), `${m.nome} sobre o quadro mais claro do reel`)
+      .toBeGreaterThanOrEqual(m.piso);
+  }
 });
