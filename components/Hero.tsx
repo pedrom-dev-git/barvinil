@@ -47,12 +47,21 @@ export function Hero() {
         <>
           <FundoVideo src={asset(`/video/${site.videoHero.valor}`)} />
           {/* The type measures ~12:1 against musgo and nothing at all against raw
-              footage, so the reel never reaches the page undiluted: faint, and under
-              the house's own green, heaviest where the booking form sits. */}
+              footage, so the reel never reaches the page undiluted: it is always
+              under the house's green, and the green is poured by where the type is,
+              not evenly.
+
+              Measured, not guessed. The type occupies 12%–90% of this gradient's run
+              on a phone and 24%–76% on a desktop, and the tightest thing on it is the
+              small "CANOAS · RS" in areia-suave, which owes 4,5:1 and had 4,75:1 to
+              give. So the green stays solid through the foot — where the buttons are,
+              and where the hero has to meet the section below without a seam — holds
+              at 90% through the band the type reads in, and only lets go above it,
+              where there is nothing but the record and the reel. */}
           <div
             data-cortina
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-musgo via-musgo/92 to-musgo/80"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-musgo from-40% via-musgo/90 via-72% to-musgo/40"
           />
         </>
       )}
