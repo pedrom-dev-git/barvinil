@@ -252,31 +252,78 @@ test.describe("opening motion", () => {
   test("opening it does not throw the page up the screen", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: null });
     await page.goto("/");
-    await page.locator("section#hero").getByRole("button", { name: /reservar mesa/i }).click();
 
-    // Counted off scroll events, not sampled off frames. A sampler misses what it
-    // was not awake for, and under a full suite it is asleep a lot — it would call
-    // a busy machine a jump. Scroll events are queued and all delivered: an animated
-    // scroll fires one per frame it moves, and a teleport fires exactly one.
-    const movimento = await page.evaluate(
-      () =>
-        new Promise<{ eventos: number; total: number }>((resolve) => {
-          const inicio = window.scrollY;
-          let eventos = 0;
-          const contar = () => eventos++;
-          addEventListener("scroll", contar, { passive: true });
-          setTimeout(() => {
-            removeEventListener("scroll", contar);
-            resolve({ eventos, total: Math.abs(window.scrollY - inicio) });
-          }, 1600);
-        }),
+    // Asserted on the request, not on the frames it produced.
+    //
+    // This was counted off scroll events, which is the honest measurement and the
+    // one that caught the original bug: an animated scroll fires one event per frame
+    // it moves, a teleport fires exactly one. It stopped being measurable. Under the
+    // full suite — four workers, each holding a page compositing the reel — the page
+    // renders at single digit frames per second, and a 400ms smooth scroll at 6fps
+    // fits inside one event. At that point "animated" and "jumped" are the same
+    // reading, and the test failed about one run in three with nothing wrong.
+    //
+    // A starved main thread cannot be asked how something looked. It can be asked
+    // what was asked of it, and "smooth, by the window" is the whole of what the fix
+    // was: window.scrollBy, because scrollIntoView also scrolls the panel's own
+    // overflow-hidden wrapper and gets swallowed; smooth, because instant is the
+    // lurch. Whether it lands where it should is the next test's job, on the outcome.
+    await page.evaluate(() => {
+      const janela = window as typeof window & { __pedidos?: ScrollToOptions[] };
+      janela.__pedidos = [];
+      const original = window.scrollBy.bind(window);
+      window.scrollBy = ((...args: unknown[]) => {
+        janela.__pedidos!.push(args[0] as ScrollToOptions);
+        return (original as (...a: unknown[]) => void)(...args);
+      }) as typeof window.scrollBy;
+    });
+
+    await page.locator("section#hero").getByRole("button", { name: /reservar mesa/i }).click();
+    // Long enough for the 300ms the panel waits, on any machine.
+    await page.waitForTimeout(1200);
+
+    const pedidos = await page.evaluate(
+      () => (window as typeof window & { __pedidos: ScrollToOptions[] }).__pedidos,
     );
 
     // Whether the page has to move at all is the viewport's business: on a tall one
-    // the whole form is already on screen and the right amount of scrolling is none.
-    test.skip(movimento.total === 0, "o formulário já coube na tela: não há o que rolar");
+    // the whole form is already on screen and the right amount of scrolling is none,
+    // and then nothing is asked of the window.
+    test.skip(pedidos.length === 0, "o formulário já coube na tela: não há o que rolar");
 
-    expect(movimento.eventos, "a página saltou em vez de rolar").toBeGreaterThan(1);
+    expect(pedidos.length, "mais de um pedido de rolagem é um tranco atrás do outro").toBe(1);
+    expect(pedidos[0].behavior, "a página saltou em vez de rolar").toBe("smooth");
+    expect(pedidos[0].top, "rolou para trás, afastando o fim do formulário").toBeGreaterThan(0);
+  });
+
+  test("and asks for no animation at all from anyone who refused motion", async ({ page }) => {
+    // The other half of the same contract: for a guest who asked for less motion
+    // there is no eased scroll either, the way there is no reel and no turning record.
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    expect(
+      await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches),
+      "emulation did not reach the page",
+    ).toBe(true);
+
+    await page.evaluate(() => {
+      const janela = window as typeof window & { __pedidos?: ScrollToOptions[] };
+      janela.__pedidos = [];
+      const original = window.scrollBy.bind(window);
+      window.scrollBy = ((...args: unknown[]) => {
+        janela.__pedidos!.push(args[0] as ScrollToOptions);
+        return (original as (...a: unknown[]) => void)(...args);
+      }) as typeof window.scrollBy;
+    });
+
+    await page.locator("section#hero").getByRole("button", { name: /reservar mesa/i }).click();
+    await page.waitForTimeout(600);
+
+    const pedidos = await page.evaluate(
+      () => (window as typeof window & { __pedidos: ScrollToOptions[] }).__pedidos,
+    );
+    test.skip(pedidos.length === 0, "o formulário já coube na tela: não há o que rolar");
+    expect(pedidos[0].behavior, "animou para quem pediu para não animar").toBe("auto");
   });
 
   test("and leaves the send button where the guest can reach it", async ({ page }, info) => {
