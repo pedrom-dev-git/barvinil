@@ -38,7 +38,7 @@ export function FundoVideo({ src }: { src: string }) {
       // Decoration. Everything it says, the page already says in type.
       aria-hidden="true"
       tabIndex={-1}
-      className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30"
+      className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-60"
     />
   );
 }

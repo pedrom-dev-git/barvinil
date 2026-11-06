@@ -87,7 +87,7 @@ export function Hero() {
           )}
         </h1>
 
-        <p className="font-display text-xs uppercase tracking-marquise text-areia-suave">
+        <p className="font-display text-xs uppercase tracking-marquise text-areia">
           {/* The official lockup already reads "(hi-fi bar)" under the name. */}
           {temLogo ? cidade : `hi-fi bar${cidade ? ` · ${cidade}` : ""}`}
         </p>
