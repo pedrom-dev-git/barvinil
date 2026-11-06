@@ -67,6 +67,32 @@ test("address, phone, menu and Instagram match content/site.ts", async ({ page }
   }
 });
 
+test("the delivery channel the house already sells on is one tap away", async ({
+  page,
+}) => {
+  // Every channel this section offers ends in the room: the WhatsApp asks for a
+  // table, the menu is a PDF of what the kitchen plates, the map is directions. The
+  // house also sells its smoked boards for delivery, and the page could not say so
+  // at all — so a guest who arrived from Instagram deciding where to eat tonight,
+  // and who was not going out, had no answer here.
+  //
+  // The href is matched by shape, not by its full string: the store id is the one
+  // part of it that is the marketplace's to change.
+  const link = page.locator("section#onde").getByRole("link", {
+    name: /ifood|delivery/i,
+  });
+
+  await expect(link).toHaveAttribute(
+    "href",
+    /^https:\/\/www\.ifood\.com\.br\/delivery\/canoas-rs\//,
+  );
+  // Same two rules as every other row in this list: it leaves for a third party in
+  // a tab of its own, without handing that party a handle on this page, and it is a
+  // thumb-sized target.
+  await expect(link).toHaveAttribute("rel", /noopener/);
+  expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(48);
+});
+
 test("no unfilled placeholder ever reaches the page", async ({ page }) => {
   const texto = (await page.locator("body").innerText()).toLowerCase();
   expect(texto).not.toContain("a preencher");
