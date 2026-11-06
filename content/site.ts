@@ -43,6 +43,15 @@ const DONO = "material oficial do dono, entregue via Pedro em 2026-10-30";
 /** The house's printed menu — its own words about its own kitchen, by definition. */
 const CARDAPIO_2026 =
   "cardápio oficial (menu_VINIL2026_FINAL), entregue via Pedro em 2026-11-05";
+/**
+ * The iFood storefront, as Pedro found it on 2026-11-06.
+ *
+ * It could NOT be read from here: the store page answers 403 with a Cloudflare
+ * challenge from this machine's network exit, so the URL is recorded as given and
+ * nothing on the page was read off it. Confirming the store is the house's, and
+ * current, is a sentence in the next conversation with the owner.
+ */
+const IFOOD = "iFood, informado via Pedro em 2026-11-06 — não verificado (403)";
 
 export type FotoSlot = {
   readonly id: string;
@@ -234,6 +243,27 @@ export const site = {
     valor:
       "https://drive.google.com/file/d/1dP45DoZYbP4ycMndidF3iPlfTGRVUieL/view?usp=drivesdk",
     fonte: BIO_SITE,
+    status: "fonte-publica",
+  } as Dado<string>,
+
+  /**
+   * The house's delivery storefront — a link out, like the menu above it.
+   *
+   * The kitchen's smoked end is on iFood, so "ordering in" is a thing the house
+   * sells and this page has to be able to say. It stays a link and nothing more:
+   * the orders, the prices and the hours behind it are the marketplace's, and
+   * plano-pmv.md §1 keeps the online menu out of scope on the same reasoning.
+   *
+   * ⚠️ NOT VERIFIED. The storefront answers 403 from here (Cloudflare), so the
+   * address is recorded as it was given, unread. Two things need the owner: that
+   * the store is his, and that it is still open. Pointing a guest at a dead or
+   * someone else's storefront is worse than offering no delivery at all.
+   */
+  ifood: {
+    valor:
+      "https://www.ifood.com.br/delivery/canoas-rs/" +
+      "carnes-defumadas-vinil-centro/3bc08e06-a427-48a1-8d28-1f281499c199",
+    fonte: IFOOD,
     status: "fonte-publica",
   } as Dado<string>,
 

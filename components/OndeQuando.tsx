@@ -2,7 +2,7 @@ import { site, preenchido } from "@/content/site";
 import { linkWhatsApp } from "@/lib/whatsapp";
 
 /**
- * Address, hours and the three channels the house already uses. Every row is a
+ * Address, hours and the four channels the house already uses. Every row is a
  * 48px tap target, which is also why nothing here is an inline link inside prose.
  *
  * `horarioDetalhado` (day by day) is null until the owner gives it, so only the
@@ -29,6 +29,14 @@ export function OndeQuando() {
       rotulo: "Cardápio",
       texto: "Ver o cardápio",
       href: site.cardapio.valor,
+    });
+  }
+  // Last of the four, and the only one that does not end in the room.
+  if (preenchido(site.ifood)) {
+    linhas.push({
+      rotulo: "Delivery",
+      texto: "Pedir no iFood",
+      href: site.ifood.valor,
     });
   }
 
