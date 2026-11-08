@@ -6,6 +6,7 @@ import localFont from "next/font/local";
 import { site, preenchido } from "@/content/site";
 import { asset } from "@/lib/asset";
 import { Rodape } from "@/components/Rodape";
+import { Atalhos } from "@/components/Atalhos";
 import "./globals.css";
 
 // Brandbook VINIL25 p.24: the brand's running-text face. Self-hosted from the
@@ -89,6 +90,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <Rodape />
+        {/* Sibling of <main>, after the footer: it is chrome of the viewport, and it
+            has to sit where no ancestor transform can take its `fixed` away. Last in
+            the DOM so it comes after the page in the tab order, which is right for a
+            pair of shortcuts. */}
+        <Atalhos />
       </body>
     </html>
   );

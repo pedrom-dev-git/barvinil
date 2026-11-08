@@ -12,19 +12,39 @@ import type { ReactNode } from "react";
  */
 type Variante = "cheio" | "vazado" | "urucum";
 
+/**
+ * `compacto` is the same pill with the type scaled down — never a different pill.
+ *
+ * It exists for the dock, where two labels share one phone-width row: "PEDIR NO
+ * IFOOD" at the default `px-7 text-sm tracking-[0.18em]` measures ~147px, and two of
+ * those do not fit in 390px. Height, radius and case are untouched, so a compact
+ * pill still reads as one of this page's buttons and still clears 48px of thumb.
+ *
+ * A size here rather than extra classes passed in from outside: overriding `px` and
+ * `tracking` through `className` is a cascade fight whose winner depends on the
+ * order Tailwind happened to emit, which is the bug the `.gira` comment describes.
+ */
+type Tamanho = "padrao" | "compacto";
+
 type Props = {
   href: string;
   children: ReactNode;
   variante?: Variante;
+  tamanho?: Tamanho;
   externo?: boolean;
   className?: string;
 };
 
 /** Shared with the booking form's <button>s, so they look like every other CTA. */
-export function classeBotao(variante: Variante = "vazado"): string {
+export function classeBotao(variante: Variante = "vazado", tamanho: Tamanho = "padrao"): string {
   const base =
-    "inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-7 " +
-    "font-display text-sm uppercase tracking-[0.18em] transition-colors duration-200";
+    "inline-flex min-h-12 items-center justify-center gap-2 rounded-full " +
+    "font-display uppercase transition-colors duration-200";
+
+  const escala =
+    tamanho === "compacto"
+      ? "px-4 text-[0.8125rem] tracking-[0.1em]"
+      : "px-7 text-sm tracking-[0.18em]";
 
   // Same geometry for all three — the pill, the type and the tap target are the
   // design, and the variant only ever changes what fills it.
@@ -37,20 +57,21 @@ export function classeBotao(variante: Variante = "vazado"): string {
     urucum: "bg-urucum text-areia hover:brightness-90",
   }[variante];
 
-  return `${base} ${estilo}`;
+  return `${base} ${escala} ${estilo}`;
 }
 
 export function Botao({
   href,
   children,
   variante = "vazado",
+  tamanho = "padrao",
   externo = false,
   className = "",
 }: Props) {
   return (
     <a
       href={href}
-      className={`${classeBotao(variante)} ${className}`}
+      className={`${classeBotao(variante, tamanho)} ${className}`}
       {...(externo ? { target: "_blank", rel: "noopener noreferrer" } : {})}
     >
       {children}

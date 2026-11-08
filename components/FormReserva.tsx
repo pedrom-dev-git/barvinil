@@ -31,6 +31,27 @@ const ABRE = "19:30";
 const FOLGA = 24;
 const FECHA = "22:30";
 
+/**
+ * How much of the bottom of the viewport is covered by chrome floating over it.
+ *
+ * Today that is the shortcuts dock, and today the answer is always 0 while a panel
+ * is open — app/globals.css takes the dock off screen for exactly as long as one is.
+ * This exists so that decision can be revisited without quietly burying the send
+ * button: the scroll above brings `alvo.bottom + FOLGA` to the fold, and a fixed bar
+ * is invisible to that arithmetic.
+ *
+ * Measured off the DOM instead of sharing a constant with the dock: a number copied
+ * into two files is a number that goes stale in one of them. `visibility` is what
+ * decides, which is also why the dock must be hidden with `invisible` and not merely
+ * faded — tests/atalhos.spec.ts pins that invariant. Null means no dock, which is
+ * what a desktop and a bare checkout both look like.
+ */
+function oclusaoInferior(): number {
+  const cromo = document.querySelector<HTMLElement>("[data-atalhos]");
+  if (!cromo || getComputedStyle(cromo).visibility === "hidden") return 0;
+  return Math.max(0, window.innerHeight - cromo.getBoundingClientRect().top);
+}
+
 /** Every half hour from ABRE to FECHA, both ends included. */
 const HORARIOS = (() => {
   const emMinutos = (h: string) => {
@@ -111,7 +132,7 @@ export function FormReserva({ e164, aoLado, alinhar = "inicio", className = "" }
       // ancestor, and one of them is the panel's own overflow-hidden wrapper — mid
       // animation it still holds more than it shows, so it swallowed the scroll and
       // the page never moved.
-      const faltando = Math.ceil(alvo.bottom + FOLGA - window.innerHeight);
+      const faltando = Math.ceil(alvo.bottom + FOLGA + oclusaoInferior() - window.innerHeight);
       if (faltando > 0) window.scrollBy({ top: faltando, behavior: suave ? "smooth" : "auto" });
     }, suave ? 300 : 0);
   }

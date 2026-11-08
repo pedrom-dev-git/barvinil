@@ -73,6 +73,36 @@ body {
   border-radius: 2px;
 }
 
+/* WCAG 2.4.11 (Focus Not Obscured) — o dock é barra fixa no pé do telefone, e sem
+ * isto o browser pode rolar um link de #onde para debaixo dele ao receber o Tab.
+ * Reserva 6rem embaixo de quem acabou de ganhar foco; zera a partir do sm:, onde
+ * o dock não existe. */
+html {
+  scroll-padding-bottom: 6rem;
+}
+
+@media (min-width: 40rem) {
+  html {
+    scroll-padding-bottom: 0;
+  }
+}
+
+/* O dock sai de cena enquanto um painel de reserva está aberto.
+ *
+ * Em CSS e NÃO no observador de components/Atalhos.tsx, de propósito: o
+ * IntersectionObserver é assíncrono, e a checagem de ponteiro do browser não espera
+ * pelo próximo frame dele. O botão de enviar é w-full; na janela entre o toque e a
+ * próxima volta do observador, o dock estaria em cima dele — e o único teste que
+ * avisaria é o `click({ trial: true })` de tests/atalhos.spec.ts.
+ *
+ * Depende de dois detalhes internos de components/FormReserva.tsx: o atributo
+ * [data-painel-reserva] e o `inert` que ele perde ao abrir (linhas 178-179). Um
+ * refactor que troque o `inert` por outra coisa reativa o dock sobre o enviar. */
+body:has([data-painel-reserva]:not([inert])) [data-atalhos] {
+  visibility: hidden;
+  opacity: 0;
+}
+
 @layer utilities {
   /* Grão de filme. SVG inline em data URI: nenhuma requisição, nenhuma lib. */
   .grao::after {
