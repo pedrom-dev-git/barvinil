@@ -30,11 +30,23 @@ export function Hero() {
     ? `${site.endereco.valor.cidade} · ${site.endereco.valor.uf}`
     : null;
 
-  const cardapio = preenchido(site.cardapio) ? (
-    <Botao href={site.cardapio.valor} externo className="w-full sm:w-auto">
-      Ver cardápio
-    </Botao>
-  ) : null;
+  // The two that share the row with "Reservar mesa". Both leave the page, and the
+  // delivery one is the only thing here painted in somebody else's colour — it is
+  // last because the house's own doors come first.
+  const aoLado = (
+    <>
+      {preenchido(site.cardapio) && (
+        <Botao href={site.cardapio.valor} externo className="w-full sm:w-auto">
+          Ver cardápio
+        </Botao>
+      )}
+      {preenchido(site.ifood) && (
+        <Botao href={site.ifood.valor} externo variante="urucum" className="w-full sm:w-auto">
+          Pedir no iFood
+        </Botao>
+      )}
+    </>
+  );
 
   // Full height only from sm up. On a phone a full-height hero with centred content
   // left blank bands above and below, and nothing said the page went on.
@@ -102,9 +114,9 @@ export function Hero() {
         )}
 
         {preenchido(site.whatsapp) ? (
-          <FormReserva e164={site.whatsapp.valor.e164} aoLado={cardapio} className="mt-10" />
+          <FormReserva e164={site.whatsapp.valor.e164} aoLado={aoLado} className="mt-10" />
         ) : (
-          cardapio && <div className="mt-10 flex flex-col sm:flex-row">{cardapio}</div>
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">{aoLado}</div>
         )}
       </div>
     </section>

@@ -36,6 +36,13 @@
   --color-areia: #ffedd2;
   --color-areia-suave: #c6bca9;
   --color-argila: #ca6838;
+  /* Not in the brandbook: the delivery pill's red, and the only colour on this page
+     that answers to somebody else's brand. It is iFood's #ea1d2c brought down ~10%,
+     because the brand red cannot carry a 14px label — areia on it is 3,88:1 and even
+     white only 4,46:1, under WCAG AA's 4,5. On this one areia reads at 4,67:1, and
+     at that distance it is still unmistakably the red people tap for delivery.
+     Measured in tests/contraste.spec.ts; do not "restore" the official hex. */
+  --color-urucum: #d21a27;
 
   --font-display: var(--fonte-gorga), "Helvetica Neue", Arial, sans-serif;
   --font-body: var(--fonte-gorga), ui-sans-serif, system-ui, sans-serif;
