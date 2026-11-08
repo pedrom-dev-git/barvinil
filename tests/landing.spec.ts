@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { site, preenchido } from "../content/site";

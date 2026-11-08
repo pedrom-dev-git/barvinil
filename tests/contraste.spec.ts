@@ -1,4 +1,5 @@
-import { test, expect, type Locator } from "@playwright/test";
+import { test, expect } from "./fixtures";
+import type { Locator } from "@playwright/test";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { site, preenchido } from "../content/site";

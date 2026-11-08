@@ -1,4 +1,5 @@
-import { test, expect, type Locator } from "@playwright/test";
+import { test, expect } from "./fixtures";
+import type { Locator } from "@playwright/test";
 
 /**
  * Geometry the eye reads as "crooked" before it can say why. Every assertion here

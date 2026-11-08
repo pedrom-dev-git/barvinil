@@ -1,4 +1,5 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "./fixtures";
+import type { Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { site, preenchido } from "../content/site";
 import { linkReserva, mensagemReserva } from "../lib/whatsapp";
