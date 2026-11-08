@@ -93,6 +93,36 @@ test("the delivery channel the house already sells on is one tap away", async ({
   expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(48);
 });
 
+test("the hero offers the delivery storefront beside its two CTAs", async ({ page }) => {
+  // The row in "onde e quando" is the answer for someone already reading the page
+  // to the end. The hero is where the guest who arrived from Instagram decides in
+  // four seconds, and until now it offered two doors, both of them to the room.
+  const botao = page.locator("section#hero").getByRole("link", { name: /ifood/i });
+
+  await expect(botao).toHaveAttribute(
+    "href",
+    /^https:\/\/www\.ifood\.com\.br\/delivery\/canoas-rs\//,
+  );
+  await expect(botao).toHaveAttribute("target", "_blank");
+  await expect(botao).toHaveAttribute("rel", /noopener/);
+
+  // Filled and red, measured off the pixels the browser resolved rather than off a
+  // class name: `bg-urucum` in the markup proves a spelling, not a colour.
+  //
+  // Red is asserted as "the red channel dominates both others twice over", which is
+  // a floor the theme's own warm tones do not clear — argila, the closest thing the
+  // brandbook has to this, is #ca6838 and fails it on green alone (202 vs 2x104).
+  // So this cannot pass by someone reaching for the palette's orange.
+  const fundo = await botao.evaluate((el) => {
+    const c = getComputedStyle(el).backgroundColor;
+    const [r, g, b, a = 1] = c.match(/[\d.]+/g)!.map(Number);
+    return { r, g, b, a };
+  });
+  expect(fundo.a, "o botão é cheio, não vazado").toBe(1);
+  expect(fundo.r, "vermelho vs verde").toBeGreaterThan(fundo.g * 2);
+  expect(fundo.r, "vermelho vs azul").toBeGreaterThan(fundo.b * 2);
+});
+
 test("no unfilled placeholder ever reaches the page", async ({ page }) => {
   const texto = (await page.locator("body").innerText()).toLowerCase();
   expect(texto).not.toContain("a preencher");

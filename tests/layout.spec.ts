@@ -70,27 +70,39 @@ test("on a phone the next section peeks above the fold", async ({ page }, testIn
   expect(topo).toBeLessThan(page.viewportSize()!.height);
 });
 
-test("the hero's two buttons agree on a width", async ({ page }, testInfo) => {
+test("the hero's three buttons agree on a width", async ({ page }, testInfo) => {
   // Stacked on a phone, one pill ran the whole column (342px) and the other hugged
   // its own words (195px): same left edge, ragged right. Side by side on a desktop
-  // it is the opposite — two pills of matching width read as a pair of equals, and
-  // the hierarchy between the filled one and the outlined one goes flat.
+  // it is the opposite — pills of matching width read as a row of equals, and the
+  // hierarchy between the filled one and the outlined one goes flat.
+  //
+  // The delivery pill joined the row and is held to the same rule, which is the
+  // whole of what "same design, in red" means geometrically: on a phone it lines up
+  // with the column edge to edge, on a desktop it hugs its words on the same line.
   const hero = page.locator("section#hero");
   const caixa = async (l: Locator) => (await l.boundingBox())!;
   const reservar = await caixa(hero.getByRole("button", { name: /reservar mesa/i }));
   const cardapio = await caixa(hero.getByRole("link", { name: /cardápio/i }));
+  const delivery = await caixa(hero.getByRole("link", { name: /ifood/i }));
 
   if (testInfo.project.name === "mobile") {
-    expect(cardapio.width, "largura").toBeCloseTo(reservar.width, 0);
-    expect(cardapio.x, "borda esquerda").toBeCloseTo(reservar.x, 0);
-    expect(cardapio.x + cardapio.width, "borda direita").toBeCloseTo(
-      reservar.x + reservar.width,
-      0,
-    );
+    for (const [nome, pill] of [
+      ["cardápio", cardapio],
+      ["delivery", delivery],
+    ] as const) {
+      expect(pill.width, `largura · ${nome}`).toBeCloseTo(reservar.width, 0);
+      expect(pill.x, `borda esquerda · ${nome}`).toBeCloseTo(reservar.x, 0);
+      expect(pill.x + pill.width, `borda direita · ${nome}`).toBeCloseTo(
+        reservar.x + reservar.width,
+        0,
+      );
+    }
   } else {
     const coluna = (await caixa(hero.locator("div.relative").first())).width;
     expect(reservar.width).toBeLessThan(coluna * 0.9);
     expect(cardapio.width).toBeLessThan(coluna * 0.9);
-    expect(cardapio.y, "mesma linha").toBeCloseTo(reservar.y, 0);
+    expect(delivery.width).toBeLessThan(coluna * 0.9);
+    expect(cardapio.y, "mesma linha · cardápio").toBeCloseTo(reservar.y, 0);
+    expect(delivery.y, "mesma linha · delivery").toBeCloseTo(reservar.y, 0);
   }
 });

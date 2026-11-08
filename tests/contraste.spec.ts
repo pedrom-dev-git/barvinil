@@ -128,9 +128,34 @@ test.describe("o formulário de reserva", () => {
 test("a borda do botão vazado é visível (1.4.11, 3:1)", async ({ page }) => {
   // "Ver cardápio" is a button, and a button's boundary is the whole of what says
   // it is one — there is no fill to fall back on.
-  const vazado = page.locator("section#hero a[target='_blank']").first();
+  //
+  // Named, not taken as the first external link in the hero: the delivery pill is
+  // the second one, and it IS filled, so whichever of the two `.first()` happened
+  // to land on would decide whether this measured anything.
+  const vazado = page.locator("section#hero").getByRole("link", { name: /cardápio/i });
   await expect(vazado).toBeVisible();
   expect(await contraste(vazado, "border-top-color")).toBeGreaterThanOrEqual(3);
+});
+
+test("o rótulo do botão de delivery se lê sobre o próprio vermelho (1.4.3, 4.5:1)", async ({
+  page,
+}) => {
+  // This is the one measurement that decides which red the button may be, and it is
+  // the reason the pill is not painted in iFood's own #EA1D2C: against that red the
+  // house's areia sits at 3,88:1 and even pure white only reaches 4,46:1 — under the
+  // floor for a 14px label. The red has to come down until areia clears 4,5:1.
+  //
+  // Measured against the element's own fill, not against what it sits on: `fundoDe`
+  // deliberately starts at the parent, and for a filled button the parent is the
+  // wrong surface — the label is read against the pill.
+  const botao = page.locator("section#hero").getByRole("link", { name: /ifood/i });
+  await expect(botao).toBeVisible();
+
+  const [tinta, fundo] = await Promise.all([
+    propriedade(botao, "color"),
+    propriedade(botao, "background-color"),
+  ]);
+  expect(razao(cor(tinta), cor(fundo))).toBeGreaterThanOrEqual(4.5);
 });
 
 test("o ponto apagado do passa-fotos é visível (3:1)", async ({ page }) => {
@@ -176,7 +201,10 @@ test("o topo se lê sobre o reel, não sobre o tema (1.4.3 / 1.4.11)", async ({ 
   const alvos = [
     { nome: "CANOAS · RS", sel: "section#hero p:first-of-type", piso: 4.5 },
     { nome: "tagline", sel: "section#hero p.font-destaque", piso: 3 },
-    { nome: "botão vazado", sel: "section#hero a[target='_blank']", piso: 4.5 },
+    // Only the outlined one is read against the reel. The delivery pill next to it
+    // is opaque, so no frame ever reaches its label — what that label is read
+    // against is the pill's own red, measured by computed colour further down.
+    { nome: "botão vazado", sel: 'section#hero a:has-text("cardápio")', piso: 4.5 },
     { nome: "logotipo", sel: "section#hero h1", piso: 3 },
   ];
 
