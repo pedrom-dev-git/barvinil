@@ -9,12 +9,19 @@ import { enderecoUmaLinha } from "../lib/maps";
  * answers it only for someone who already knows the city. The square answers it for
  * everyone else.
  *
- * Two of these assertions exist because the a11y gate can no longer make them.
- * @axe-core/playwright recurses into cross-origin frames, so without
- * `.exclude("iframe")` the violations of Google's own markup would fail our suite —
- * a red run caused by code we cannot fix, changing whenever they deploy. Excluding
- * it also blinds axe to the <iframe> ELEMENT, `frame-title` included. So the title
- * and the absence of tabindex are checked here, by hand, on purpose.
+ * The title and the absence of tabindex are asserted here even though axe also
+ * checks them. They were going to be the hand-rolled replacement for an exclusion
+ * that turned out to be unnecessary: axe does recurse into cross-origin frames, but
+ * tests/fixtures.ts intercepts the iframe's own navigation, so what axe audits is
+ * our own clean stub — measured, 55 passing with no exclusion anywhere. They stay
+ * because this is the file that explains WHY the map needs them, and because the day
+ * someone writes a spec that goes online on purpose, the right tool is
+ * `setLegacyMode(true)` and not `.exclude()`, and these assertions are what makes
+ * that switch safe.
+ *
+ * The `allow` assertion is the one property nothing else guards. The snippet
+ * Google's own share dialog hands out carries `allow="fullscreen"`, and pasting it
+ * over this markup would quietly hand the frame a permission it has no use for.
  */
 
 const MAPA = "section#onde iframe";
@@ -53,9 +60,8 @@ test("o mapa aponta para o endereço que a página imprime", async ({ page }) =>
 test("o mapa tem nome acessível, e não foi tirado da ordem de tabulação", async ({
   page,
 }) => {
-  // frame-title is wcag2a and serious, and it is one of the rules the axe exclusion
-  // turned off for this element. An iframe with no title is "frame" to a screen
-  // reader, in a section whose whole job is to say where the house is.
+  // frame-title is wcag2a and serious. An iframe with no title is announced as
+  // "frame", in the one section whose whole job is to say where the house is.
   const titulo = await page.locator(MAPA).getAttribute("title");
   expect(titulo?.trim(), "o iframe do mapa está sem title").toBeTruthy();
   expect(titulo).toMatch(/mapa/i);
@@ -66,15 +72,31 @@ test("o mapa tem nome acessível, e não foi tirado da ordem de tabulação", as
   expect(await page.locator(MAPA).getAttribute("tabindex")).toBeNull();
 });
 
-test("o mapa não é buscado antes de a seção chegar perto", async ({ page }) => {
-  // RNF03 asks for under 3s on 4G, and this is a third-party document in the fourth
-  // section. `lazy` is what reconciles "it loads on its own, without a click" with
-  // not paying for it on arrival.
-  expect(await page.locator(MAPA).getAttribute("loading")).toBe("lazy");
-  // The page's URL is not Google's business. Asserted as present-and-restrictive
-  // rather than as an exact string: `no-referrer` and `no-referrer-when-downgrade`
-  // are both defensible, a missing attribute is not.
-  expect(await page.locator(MAPA).getAttribute("referrerpolicy")).toMatch(/no-referrer/);
+test("o mapa pede o mínimo do visitante e o mínimo do browser", async ({ page }) => {
+  const mapa = page.locator(MAPA);
+
+  // `lazy` is a hint, not a promise — measured, Chromium fetches this frame with
+  // 2000px of page above it. Asserted anyway: it is the only chance RNF03 gets on a
+  // slow phone, and dropping it would be a regression nobody would see.
+  expect(await mapa.getAttribute("loading")).toBe("lazy");
+
+  // The page's URL is not Google's business. Present-and-restrictive rather than an
+  // exact string: `no-referrer` and `no-referrer-when-downgrade` are both
+  // defensible, a missing attribute is not. It hides WHICH page; the site's origin
+  // still reaches the frame through location.ancestorOrigins, and nothing in the
+  // markup can stop that — which is what the footer notice is for.
+  expect(await mapa.getAttribute("referrerpolicy")).toMatch(/no-referrer/);
+
+  // No `allow`, so the default permissions policy denies the frame geolocation,
+  // camera, microphone and the rest — verified behaviour, not an assumption. This
+  // is the one security property no other test guards, and the snippet Google's own
+  // share dialog hands out carries `allow`, so a paste would reintroduce it.
+  expect(await mapa.getAttribute("allow"), "o mapa ganhou uma permissão").toBeNull();
+  // `sandbox` is deliberately absent: the embed needs its own scripts and storage,
+  // and the token set it actually requires is undocumented and moves. An offline
+  // suite cannot tell a broken embed from a working one, so this is not the place
+  // to guess at one.
+  expect(await mapa.getAttribute("sandbox")).toBeNull();
 });
 
 test("o mapa carrega sozinho, sem clique", async ({ page }) => {
@@ -83,6 +105,21 @@ test("o mapa carrega sozinho, sem clique", async ({ page }) => {
   // standing in for Google, which is also what proves the stub reaches the iframe.
   const frame = page.frameLocator(MAPA);
   await expect(frame.locator("body")).toBeAttached({ timeout: 10_000 });
+});
+
+test("a página diz ao visitante que o mapa vem do Google", async ({ page }) => {
+  // Asserted in this file and not with the footer's other line, because the notice
+  // exists because of the map: the day the square goes, this sentence goes with it,
+  // and a test here is what ties the two together.
+  //
+  // Before this map the published page made no third-party request at all. It now
+  // makes one on load, without being asked, and the visitor is the one it happens
+  // to — so the sentence has to be somewhere they can read it. A line in the README
+  // does not reach them.
+  const aviso = page.locator("footer [data-aviso-terceiros]");
+  await expect(aviso).toHaveCount(1);
+  await expect(aviso).toContainText(/google/i);
+  await expect(aviso).toContainText(/ip/i);
 });
 
 test("o quadrado é quadrado, nas duas larguras", async ({ page }) => {
