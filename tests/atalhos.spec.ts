@@ -19,6 +19,18 @@ import { site, preenchido } from "../content/site";
 
 const DOCK = "[data-atalhos]";
 
+/**
+ * The dock's links, located through the DOM rather than by role.
+ *
+ * `getByRole` only sees what is in the accessibility tree, and the dock spends most
+ * of its life `invisible` — so a role locator finds zero links exactly when this
+ * file needs to assert that the markup is there and merely hidden. Role locators are
+ * still used below wherever the dock is on screen and the question IS about what a
+ * screen reader can reach.
+ */
+const linkDo = (page: Page, nome: RegExp) =>
+  page.locator(`${DOCK} a`).filter({ hasText: nome });
+
 /** Only the phone has a dock, so the desktop project asserts its absence instead. */
 const noCelular = (page: Page) => page.viewportSize()!.width < 640;
 
@@ -41,7 +53,7 @@ async function irPara(page: Page, id: string) {
  */
 async function existe(page: Page) {
   await expect(page.locator(DOCK), "não há dock nenhum na página").toHaveCount(1);
-  await expect(page.locator(DOCK).getByRole("link")).toHaveCount(2);
+  await expect(page.locator(`${DOCK} a`)).toHaveCount(2);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -51,11 +63,9 @@ test.beforeEach(async ({ page }) => {
 test("leva as duas portas que saem da página, e só elas", async ({ page }) => {
   const dock = page.locator(DOCK);
   await expect(dock).toHaveCount(1);
+  await expect(page.locator(`${DOCK} a`)).toHaveCount(2);
 
-  const links = dock.getByRole("link");
-  await expect(links).toHaveCount(2);
-
-  const ifood = dock.getByRole("link", { name: /ifood/i });
+  const ifood = linkDo(page, /ifood/i);
   await expect(ifood).toHaveAttribute(
     "href",
     /^https:\/\/www\.ifood\.com\.br\/delivery\/canoas-rs\//,
@@ -63,7 +73,7 @@ test("leva as duas portas que saem da página, e só elas", async ({ page }) => 
 
   // The route, not the place card. The link in #onde points at the pin; this one
   // asks the guest's own maps app for turn-by-turn, which is the errand.
-  const rota = dock.getByRole("link", { name: /como chegar/i });
+  const rota = linkDo(page, /como chegar/i);
   await expect(rota).toHaveAttribute(
     "href",
     /^https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=/,
@@ -110,7 +120,8 @@ test.describe("no celular", () => {
     // has to carry its own.
     await existe(page);
     await irPara(page, "fotos");
-    const links = page.locator(DOCK).getByRole("link");
+    const links = page.locator(`${DOCK} a`);
+    expect(await links.count(), "o dock não tem pill nenhum").toBe(2);
     for (let i = 0; i < (await links.count()); i++) {
       const caixa = (await links.nth(i).boundingBox())!;
       expect(caixa.height, `pill ${i}`).toBeGreaterThanOrEqual(44);
@@ -120,14 +131,28 @@ test.describe("no celular", () => {
   test("não aparece na primeira tela, entra depois do hero e sai antes da reserva", async ({
     page,
   }) => {
-    // The first screen belongs to "Reservar mesa", which is the action this project
-    // is marked on, and the hero already carries the delivery pill. The dock's whole
-    // life is the three sections in between.
+    // The first screen belongs to "Reservar mesa", the action this project is marked
+    // on, and the hero already carries the delivery pill — so the dock is not there
+    // on arrival, and it is gone again before the booking section.
     await expect(page.locator(DOCK)).toBeHidden();
 
-    for (const id of ["casa", "fotos", "onde"]) {
+    // While ANY part of the hero is still on screen, it stays away. This is the
+    // assertion that distinguishes "appears after the hero" from "appears after a
+    // little scrolling": on a phone the hero is not full height, so the top of #casa
+    // is on screen long before the hero's tail has left.
+    await page.locator("section#casa").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(400);
+    const heroNaTela = await page
+      .locator("section#hero")
+      .evaluate((el) => el.getBoundingClientRect().bottom > 0);
+    expect(heroNaTela, "o cenário deste passo exige o hero ainda na tela").toBe(true);
+    await expect(page.locator(DOCK), "apareceu com o hero ainda na tela").toBeHidden();
+
+    // And it is there for the whole middle of the page, from the moment the hero is
+    // gone to the moment the booking arrives.
+    for (const id of ["fotos", "onde"]) {
       await irPara(page, id);
-      await expect(page.locator(DOCK), `visível em #${id}`).toBeVisible();
+      await expect(page.locator(DOCK), `escondido em #${id}`).toBeVisible();
     }
 
     await irPara(page, "reservar");
@@ -157,7 +182,7 @@ test.describe("no celular", () => {
 
   test("escondido, não recebe foco", async ({ page }) => {
     await existe(page);
-    const link = page.locator(DOCK).getByRole("link").first();
+    const link = page.locator(`${DOCK} a`).first();
     await link.focus({ timeout: 2000 }).catch(() => {});
     const focado = await page.evaluate(
       () => !!document.activeElement?.closest("[data-atalhos]"),
@@ -255,10 +280,7 @@ test("a rota aponta para o endereço que a página imprime", async ({ page }) =>
   test.skip(!preenchido(site.endereco), "sem endereço não há rota");
   const e = site.endereco.valor!;
 
-  const href = await page
-    .locator(DOCK)
-    .getByRole("link", { name: /como chegar/i })
-    .getAttribute("href");
+  const href = await linkDo(page, /como chegar/i).getAttribute("href");
 
   // The destination is the address the guest reads in #onde, encoded — not a second
   // source of truth free to drift from the text beside it. The separator is Google's
