@@ -43,11 +43,20 @@ export const urlRota = (e: EnderecoMapeavel) =>
 /**
  * The embeddable map for the #onde square.
  *
- * ⚠️ `output=embed` is the keyless form, and it is UNDOCUMENTED. It is free, which
- * is what RNF09 needs (the official Maps Embed API wants an API key), and Google can
- * withdraw it without notice — no test will catch that, since the spec can only
- * assert the shape of the src. The mitigation is that "Ver no mapa" beside the
- * square is a plain link that keeps working either way.
+ * `output=embed` is the keyless form. It is undocumented, but it is not a back door:
+ * it 301s to `/maps/embed?origin=mfe&pb=…`, the same endpoint Google's own
+ * "Share → Embed a map" dialog hands out, and embedding a Google map in your own
+ * site needs no permission under the Geo Guidelines. Audited 2026-11-08.
+ *
+ * Why keyless rather than the official Maps Embed API: not cost — that API is free
+ * too. It is that a key would have to live in a PUBLIC repository, shared by six
+ * people for a semester. The keyless form is the one with no secret in it, which is
+ * the right trade here (Regra 13 beats tidiness).
+ *
+ * ⚠️ What that does buy is fragility: Google can withdraw this form without notice,
+ * and no test will catch it — the spec can only assert the shape of the src, so the
+ * square would simply be empty. The mitigation is that "Ver no mapa" beside it is a
+ * plain link that keeps working either way.
  */
 export const urlMapaEmbed = (e: EnderecoMapeavel) =>
   `https://www.google.com/maps?q=${encodeURIComponent(enderecoUmaLinha(e))}&hl=pt-BR&z=17&output=embed`;
