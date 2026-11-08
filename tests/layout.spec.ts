@@ -52,15 +52,20 @@ test("the tagline never leaves a single word on its last line", async ({ page })
   expect(ultima).toBeCloseTo(penultima, 0);
 });
 
-test("the contact list is as tall as its rows, with no empty tail", async ({ page }) => {
-  // As a grid item it stretched to the address column's height, so its bottom
-  // rule floated under an empty gap, as if a row were missing.
-  const lista = page.locator("section#onde ul");
-  const { total, linhas } = await lista.evaluate((ul) => ({
-    total: ul.getBoundingClientRect().height,
-    linhas: [...ul.children].reduce((s, li) => s + li.getBoundingClientRect().height, 0),
-  }));
-  expect(total - linhas).toBeLessThanOrEqual(3);
+test("the map square is as tall as its own column, with no empty tail", async ({ page }) => {
+  // The failure this inherits from the contact list that stood here: as a grid item
+  // it stretched to the address column's height, so its bottom rule floated under
+  // an empty gap, as if something were missing. A square has a second way to show
+  // the same bug — stretched by the grid it stops being square — so this measures
+  // both, and the frame rather than the iframe, since the frame is what has a rule.
+  const moldura = page.locator("section#onde [data-mapa]");
+  const { largura, altura, conteudo } = await moldura.evaluate((el) => {
+    const b = el.getBoundingClientRect();
+    const dentro = el.firstElementChild!.getBoundingClientRect();
+    return { largura: b.width, altura: b.height, conteudo: dentro.height };
+  });
+  expect(Math.abs(largura - altura), "a moldura do mapa não está quadrada").toBeLessThanOrEqual(1);
+  expect(altura - conteudo, "sobra de moldura abaixo do mapa").toBeLessThanOrEqual(3);
 });
 
 test("on a phone the next section peeks above the fold", async ({ page }, testInfo) => {

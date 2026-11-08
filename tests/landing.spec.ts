@@ -38,59 +38,45 @@ test("leads with the wordmark and the tagline, above the fold", async ({ page })
   await expect(page.locator("section#hero")).toContainText(tagline);
 });
 
-test("address, phone, menu and Instagram match content/site.ts", async ({ page }) => {
+test("the address and the hours match content/site.ts", async ({ page }) => {
+  // What #onde says about the house, and nothing else. The list of four channels
+  // that used to sit beside the address is gone: each of those destinations is
+  // reached from somewhere that suits it better — the menu from the hero, delivery
+  // from the dock, a table from the booking form the WhatsApp was always for — and
+  // six routes to four places is what made this section a directory instead of an
+  // answer to "where is this?".
   const onde = page.locator("section#onde");
 
   if (preenchido(site.endereco)) {
     const e = site.endereco.valor;
     await expect(onde).toContainText(e.logradouro);
     await expect(onde).toContainText(e.bairro);
-    await expect(onde.getByRole("link", { name: /como chegar|mapa/i })).toHaveAttribute(
+    // The place card, which is what this link has always been — named for that now
+    // that the dock carries the route. Still the short link the house publishes,
+    // not a URL of ours.
+    await expect(onde.getByRole("link", { name: /ver no mapa|mapa/i })).toHaveAttribute(
       "href",
       e.mapsUrl,
     );
   }
-  if (preenchido(site.whatsapp)) {
-    await expect(onde).toContainText(site.whatsapp.valor.exibicao);
-  }
-  if (preenchido(site.cardapio)) {
-    await expect(onde.getByRole("link", { name: /cardápio/i })).toHaveAttribute(
-      "href",
-      site.cardapio.valor,
-    );
-  }
-  if (preenchido(site.instagram)) {
-    await expect(onde.getByRole("link", { name: /instagram|@barvinil/i })).toHaveAttribute(
-      "href",
-      site.instagram.valor.url,
-    );
+  if (preenchido(site.horarioResumo)) {
+    await expect(onde).toContainText(site.horarioResumo.valor);
   }
 });
 
-test("the delivery channel the house already sells on is one tap away", async ({
+test("the channel list is gone from #onde, and nothing of it was left behind", async ({
   page,
 }) => {
-  // Every channel this section offers ends in the room: the WhatsApp asks for a
-  // table, the menu is a PDF of what the kitchen plates, the map is directions. The
-  // house also sells its smoked boards for delivery, and the page could not say so
-  // at all — so a guest who arrived from Instagram deciding where to eat tonight,
-  // and who was not going out, had no answer here.
-  //
-  // The href is matched by shape, not by its full string: the store id is the one
-  // part of it that is the marketplace's to change.
-  const link = page.locator("section#onde").getByRole("link", {
-    name: /ifood|delivery/i,
-  });
+  // Asserted as absence on purpose. Removing a <ul> is easy to half-do: a stray row,
+  // a heading with nothing under it, a link that survived the delete. And three of
+  // these four labels still exist elsewhere on the page, so a test that only looked
+  // for them globally would pass while they sat here untouched.
+  const onde = page.locator("section#onde");
+  await expect(onde.locator("ul")).toHaveCount(0);
 
-  await expect(link).toHaveAttribute(
-    "href",
-    /^https:\/\/www\.ifood\.com\.br\/delivery\/canoas-rs\//,
-  );
-  // Same two rules as every other row in this list: it leaves for a third party in
-  // a tab of its own, without handing that party a handle on this page, and it is a
-  // thumb-sized target.
-  await expect(link).toHaveAttribute("rel", /noopener/);
-  expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(48);
+  for (const rotulo of [/whatsapp/i, /instagram|@barvinil/i, /cardápio/i, /ifood|delivery/i]) {
+    await expect(onde.getByRole("link", { name: rotulo }), String(rotulo)).toHaveCount(0);
+  }
 });
 
 test("the hero offers the delivery storefront beside its two CTAs", async ({ page }) => {
