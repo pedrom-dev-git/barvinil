@@ -139,7 +139,12 @@ test("the dots go straight to a photo", async ({ page }) => {
 
 test("swiping by hand lights the dot of the frame it landed on", async ({ page }) => {
   await comOQuePassar(page);
-  const n = await paradas(page);
+  // The last PHOTOGRAPH, not the last stop. They were different things while the rail
+  // ran out of travel three frames in and the last photos shared one resting place —
+  // a dot for a photo nobody could reach would have been a control that lies, so the
+  // dots counted stops instead. The lap of clones ends that: every photograph gets to
+  // the left edge, so every photograph gets a dot of its own.
+  const n = await reais(page);
   // What is under test is the dot following the rail, so the clock is held still
   // first: a tick landing mid-swipe would be testing two things at once.
   await page.locator(TRILHO).hover();
@@ -210,6 +215,66 @@ test("the row fills the width, one photo on a phone and up to three on a desktop
   // The travel is over every child, clones included — they are frames of the same
   // width sharing the same gap, and the rail has to account for them too.
   expect(total).toBeCloseTo(largura * filhos + vao * (filhos - 1), 0);
+});
+
+test("há um ponto por foto, e o rótulo diz a verdade", async ({ page }) => {
+  await comOQuePassar(page);
+
+  // On a desktop this was three dots over five photographs, and the aria-label said
+  // "Foto 1 de 5" beside them — a control that could not reach what it was counting.
+  // The loop makes every photograph reachable, so the two numbers become the same one.
+  expect(await paradas(page), "pontos e fotos deixaram de bater").toBe(await reais(page));
+  await expect(page.locator(PONTO).first()).toHaveAttribute(
+    "aria-label",
+    `Foto 1 de ${await reais(page)}`,
+  );
+});
+
+test("o curso do trilho é exatamente uma volta", async ({ page }) => {
+  await comOQuePassar(page);
+
+  // The invariant the whole loop rests on. With a lap of clones as wide as the row,
+  // the travel of the rail equals the distance of one lap — so the furthest the guest
+  // can get is the first clone, and the teleport that brings them home is an exact
+  // subtraction of one lap rather than a number that nearly fits.
+  //
+  // Measured three ways and tied together, because any two of them agreeing by
+  // accident is how geometry tests rot.
+  const { curso, volta, passo, fotos } = await page.locator(TRILHO).evaluate((el) => {
+    const filhos = Array.from(el.children) as HTMLElement[];
+    const n = el.querySelectorAll("li:not([data-clone])").length;
+    return {
+      curso: el.scrollWidth - el.clientWidth,
+      volta: (filhos[n] as HTMLElement | undefined)?.offsetLeft ?? -1,
+      passo: filhos[1].offsetLeft - filhos[0].offsetLeft,
+      fotos: n,
+    };
+  });
+
+  expect(volta, "não há clone depois da última foto").toBeGreaterThan(0);
+  expect(volta, "uma volta não é o passo vezes o número de fotos").toBeCloseTo(passo * fotos, 0);
+  expect(curso, "o curso do trilho não é uma volta exata").toBeCloseTo(volta, 0);
+});
+
+test("os clones não são fotos para quem usa leitor de tela", async ({ page }) => {
+  await comOQuePassar(page);
+
+  const clones = page.locator("section#fotos li[data-clone]");
+  expect(await clones.count(), "o trilho não carrega volta nenhuma").toBeGreaterThan(0);
+
+  // Hidden as a whole, and the image inside given an empty alt as well. The second is
+  // redundant on purpose: if the aria-hidden is ever lost in a refactor, the copy
+  // still does not read its neighbour's sentence out loud a second time. And
+  // next/image requires an alt, so there is no third option.
+  const escondidos = await clones.evaluateAll((lis) =>
+    lis.filter((li) => li.getAttribute("aria-hidden") === "true").length,
+  );
+  expect(escondidos, "há clone visível para a árvore de acessibilidade").toBe(await clones.count());
+
+  const alts = await clones.locator("img").evaluateAll((imgs) =>
+    imgs.map((img) => img.getAttribute("alt")),
+  );
+  expect(alts.every((a) => a === ""), "clone com alt escrito").toBe(true);
 });
 
 test("the rail is as wide as the section it sits in", async ({ page }, testInfo) => {
