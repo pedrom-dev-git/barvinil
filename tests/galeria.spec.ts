@@ -15,6 +15,9 @@ import type { Page } from "@playwright/test";
  * rather than pinning a photo count the house has not finished delivering.
  */
 
+/** The clock's beat, as PassaFotos.tsx sets it. Stated here so timings are not magic. */
+const INTERVALO = 5000;
+
 const TRILHO = "section#fotos [data-passa-fotos]";
 const PONTO = "section#fotos [data-ponto]";
 
@@ -347,6 +350,69 @@ test("a mão na zona de clones recebe a primeira foto de volta", async ({ page }
   await page.waitForTimeout(7000);
   expect(await rolagem(page), "o rodízio voltou a andar com a mão no trilho").toBe(0);
   expect(await aceso(page)).toBe("0");
+});
+
+test("o rodízio retoma sozinho depois de a mão sair", async ({ page }) => {
+  await comOQuePassar(page);
+  test.setTimeout(60_000);
+
+  // The gallery used to stop for good at the first touch. It was deliberate — having
+  // chosen a photograph, nobody wants to be carried off it five seconds later — but
+  // one-way: nothing anywhere set it going again. So the answer to "ele vai pro lado e
+  // para" was still yes, every time anyone touched the rail.
+  //
+  // A hand pauses it. A hand does not end it.
+  await page.locator('[data-ponto="1"]').click();
+  await expect.poll(() => aceso(page)).toBe("1");
+
+  // Still there a beat later: the choice is respected first, or this would just be a
+  // slideshow that ignores the guest.
+  await page.waitForTimeout(7000);
+  expect(await aceso(page), "a foto escolhida não foi respeitada").toBe("1");
+
+  // And then it picks itself up.
+  await expect.poll(() => aceso(page), { timeout: 25_000 }).toBe("2");
+});
+
+test("a virada custa uma batida, não uma pausa", async ({ page }) => {
+  await comOQuePassar(page);
+  test.setTimeout(60_000);
+
+  // Born green, and kept because of how it got that way. Going from the last
+  // photograph back to the first used to be a rewind across every stop in between,
+  // and the handler that watched for a hand could not tell passing from resting — so
+  // the lap could end with the clock stopped, or stuttering, depending on how finely
+  // the browser sampled. The teleport removed the rewind and with it the ambiguity;
+  // this is what would notice if either came back, in the one place where a pause
+  // would be easy to mistake for a slow frame.
+  const marcas = await page.evaluate(
+    (ms) =>
+      new Promise<Array<{ t: number; i: string }>>((pronto) => {
+        const fila = document.querySelector("section#fotos [data-ponto]")!.parentElement!;
+        const ts: Array<{ t: number; i: string }> = [];
+        const obs = new MutationObserver(() => {
+          const atual = fila.querySelector('[data-ponto][aria-current="true"]');
+          const i = atual?.getAttribute("data-ponto") ?? "";
+          // React rewrites the attribute on every render; only a change of photo counts.
+          if (i && i !== ts[ts.length - 1]?.i) ts.push({ t: Date.now(), i });
+        });
+        obs.observe(fila, { attributes: true, subtree: true, attributeFilter: ["aria-current"] });
+        setTimeout(() => {
+          obs.disconnect();
+          pronto(ts);
+        }, ms);
+      }),
+    34_000,
+  );
+
+  expect(marcas.length, "o rodízio não andou uma volta inteira").toBeGreaterThanOrEqual(5);
+  const intervalos = marcas.slice(1).map((m, k) => m.t - marcas[k].t);
+  // Generous on purpose: what this must catch is a pause of fifteen seconds standing
+  // where a beat of five belongs, not a frame arriving late.
+  expect(
+    Math.max(...intervalos),
+    `a virada custou uma pausa: ${intervalos.join(", ")}`,
+  ).toBeLessThan(INTERVALO * 2);
 });
 
 test("the rail is as wide as the section it sits in", async ({ page }, testInfo) => {

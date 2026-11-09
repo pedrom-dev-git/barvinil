@@ -97,6 +97,10 @@ test.describe("o passa-fotos, com o dedo", () => {
     // A phone fires a synthetic mouseenter and never a mouseleave, and a tap on a
     // focusable rail focuses it with no blur to follow. Pausing on either one means
     // the feature the owner asked for dies under the first finger that grazes it.
+    //
+    // This test is also why the pause cannot be armed on pointerdown: a finger that
+    // only grazes the rail would buy fifteen seconds of silence, and the poll below
+    // would run out waiting. What pauses the rail is a finger that MOVES it.
     const n = await page.locator(PONTO).count();
     await expect.poll(() => aceso(page), { timeout: 12_000 }).toBe("1");
 
@@ -104,16 +108,19 @@ test.describe("o passa-fotos, com o dedo", () => {
     await expect.poll(() => aceso(page), { timeout: 12_000 }).toBe(String(2 % n));
   });
 
-  test("tocar um ponto fixa a foto escolhida", async ({ page }) => {
+  test("tocar um ponto pausa o rodízio na foto escolhida", async ({ page }) => {
     await page.locator('[data-ponto="1"]').tap();
     await expect.poll(() => aceso(page)).toBe("1");
 
-    // Having chosen, the guest is not dragged somewhere else five seconds later.
+    // Having chosen, the guest is not dragged somewhere else five seconds later. Seven
+    // seconds and not more: the pause lasts fifteen, and this is about the choice
+    // being respected, not about when it ends. That the rail picks itself up again
+    // afterwards is galeria.spec.ts's business, measured on its own.
     await page.waitForTimeout(7000);
     expect(await aceso(page)).toBe("1");
   });
 
-  test("arrastar com a mão também fixa", async ({ page }) => {
+  test("arrastar com a mão também pausa", async ({ page }) => {
     const n = await page.locator(PONTO).count();
     // To the end of the travel, not to clientWidth × i: frames are separated by a
     // gap now, so a multiple of the view is a place the rail does not come to rest,
