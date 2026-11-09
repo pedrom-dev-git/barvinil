@@ -15,6 +15,22 @@ export type Quadro = {
 const INTERVALO = 5000;
 
 /**
+ * How long the rail has to be still before it counts as having come to rest.
+ *
+ * A scroll arrives as a stream of events and says nothing about where it is going, so
+ * resting is quiet rather than an event. `scrollend` would say it outright, but both
+ * Playwright projects are Chromium and a fallback branch for other engines would never
+ * be exercised by the suite — a branch no test can reach is a branch that is wrong.
+ * One path, measured on both viewports.
+ *
+ * The error is asymmetric, which is why 120 and not 60: too short and a stalled frame
+ * in the middle of a fling reads as rest, which is wrong; too long and the trip home
+ * is late, which costs nothing, because the clock gives it five seconds and the frame
+ * it waits on is pixel for pixel the one it is going to.
+ */
+const ASSENTA = 120;
+
+/**
  * How wide a frame is, by how many stand side by side at the widest viewport.
  *
  * Three abreast is the ceiling, not the rule: the house still owes four of the six
@@ -114,6 +130,18 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
   const [cabem, setCabem] = useState(0);
   /** The frame this component itself put the rail on, last time it moved it. */
   const nosso = useRef(0);
+  /** Pending "the rail has gone quiet" check. */
+  const assento = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * A finger is on the rail right now.
+   *
+   * People stop mid-drag to look at a photograph, and a pause longer than ASSENTA with
+   * the finger still down would otherwise be read as rest. Coming home under a
+   * stationary finger pulls the content out from under it and the browser carries on
+   * dragging from the new offset — the rail jumps a whole lap. So the trip waits for
+   * the hand to leave, and the release asks again.
+   */
+  const emMao = useRef(false);
 
   const fotos = quadros.length;
   /** Nothing to pass when every photograph is already in the row. */
@@ -155,11 +183,21 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
   useEffect(() => {
     const el = trilho.current;
     if (!el) return;
-    const medir = () => setCabem(colunas(el));
+    const medir = () => {
+      setCabem(colunas(el));
+      // Crossing a breakpoint re-lays the row and the browser re-snaps the rail, which
+      // arrives as a scroll this component did not ask for — indistinguishable, from
+      // the outside, from a hand. Claiming the rail's current frame makes the
+      // difference legible again.
+      nosso.current = indice(el);
+    };
     medir();
     const observador = new ResizeObserver(medir);
     observador.observe(el);
-    return () => observador.disconnect();
+    return () => {
+      observador.disconnect();
+      if (assento.current) clearTimeout(assento.current);
+    };
   }, [quadros.length]);
 
   // Movement is opt-in, same stance as .gira in globals.css: for anyone who asked
@@ -169,7 +207,15 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
     const relogio = setInterval(() => {
       const el = trilho.current;
       if (!el) return;
-      rolar(el, (indice(el) + 1) % pontos, "smooth");
+      // Forward, always — never modulo the stops. The modulo is what made the rail
+      // rewind at the end of the row, sweeping every photograph in reverse, and it is
+      // the whole of the complaint this answers. Past the last photograph the next
+      // frame is the first clone, and the trip home happens once the rail is quiet.
+      //
+      // Clamped at the last child rather than left to run off the end: alvo() returns
+      // 0 for a frame that does not exist, which would be a rewind to the beginning
+      // coming in through the back door, and no test would name it.
+      rolar(el, Math.min(indice(el) + 1, el.children.length - 1), "smooth");
     }, INTERVALO);
     return () => clearInterval(relogio);
   }, [menosMovimento, parado, encerrado, pontos]);
@@ -189,17 +235,47 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
   }
 
   function aoRolar(el: HTMLElement) {
-    const i = indice(el);
     // Modulo the photographs: sitting on the clone of frame 0, the guest is looking at
     // frame 0, and the dot has to say so. It is also what makes the trip home
     // invisible — the lit dot does not change when the rail jumps back.
-    setAceso(fotos > 0 ? i % fotos : 0);
+    //
+    // Written live, with no delay: the dot follows the rail under the finger, and only
+    // the decisions below wait for it to be still.
+    setAceso(fotos > 0 ? indice(el) % fotos : 0);
 
-    // A scroll arrives as a stream of events, so what counts is where the rail comes
-    // to rest, not where it passes. Resting anywhere this component did not ask for
-    // is a hand on the rail — and from there it is the guest's, not the clock's.
-    const assentado = Math.abs(el.scrollLeft - alvo(el, i)) <= 1.5;
-    if (assentado && i !== nosso.current) setEncerrado(true);
+    if (assento.current) clearTimeout(assento.current);
+    assento.current = setTimeout(() => assentou(el), ASSENTA);
+  }
+
+  /**
+   * The rail has gone quiet. Two decisions, and the order between them is load-bearing.
+   *
+   * Reading a scroll WHILE it happens is what used to kill this gallery: the rail
+   * passes within a pixel of every stop on its way somewhere, and the old handler
+   * asked "am I at a stop I did not ask for?" on each event. Rewinding across four
+   * stops it was a matter of sampling luck, and the clock died for good — on a phone
+   * sampling finely enough to hit one of those windows, every time.
+   */
+  function assentou(el: HTMLElement) {
+    const i = indice(el);
+
+    // Whose hand moved it — asked first, and asked of the frame the rail actually came
+    // to rest on. If the trip home ran first, the rail would already be sitting on the
+    // frame this component asked for, and a guest who dragged to the end of the lap
+    // would have the slideshow start up again under their finger.
+    const noLugar = Math.abs(el.scrollLeft - alvo(el, i)) <= 1.5;
+    if (noLugar && i !== nosso.current) setEncerrado(true);
+
+    // And then home. By index, never by subtracting a lap's worth of pixels: offsetLeft
+    // is a whole number and already a snap position, while scrollLeft minus a lap can
+    // land half a pixel off one, and a mandatory snap container answers that with an
+    // animation of its own — which is jitter, and more events, and a second trip.
+    //
+    // behavior "auto" is instant, so this is one event, and the frame it lands on is
+    // the same picture at the same scale: nothing moves on screen. The event it does
+    // fire re-arms the check above, which then finds the rail where this put it and
+    // does nothing. One extra round, and it terminates.
+    if (!emMao.current && fotos > 0 && i >= fotos) rolar(el, i - fotos, "auto");
   }
 
   /**
@@ -262,6 +338,21 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
         aria-label="Fotos da casa"
         data-passa-fotos
         onScroll={(e) => aoRolar(e.currentTarget)}
+        // A finger down means the rail may stop moving without having come to rest,
+        // and the trip home must not run under it. The release asks again, because by
+        // then the rail has usually been quiet for longer than ASSENTA and no further
+        // scroll event is coming to re-arm the check.
+        onPointerDown={() => {
+          emMao.current = true;
+        }}
+        onPointerUp={(e) => {
+          emMao.current = false;
+          assentou(e.currentTarget);
+        }}
+        onPointerCancel={(e) => {
+          emMao.current = false;
+          assentou(e.currentTarget);
+        }}
         // Keyboard focus is reading; the focus a tap leaves behind is not, and it
         // never blurs. :focus-visible is exactly that distinction.
         onFocus={(e) => setParado(e.currentTarget.matches(":focus-visible"))}
