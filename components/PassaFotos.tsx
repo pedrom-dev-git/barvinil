@@ -35,9 +35,12 @@ const LARGURA = [
 /**
  * Where the rail rests with frame `i` at its left edge.
  *
- * Clamped, because the last frames share the last resting place: three abreast out
- * of four photos, the rail runs out of travel one frame in, and asking for the
- * fourth has to mean the same scroll position as asking for the second.
+ * The clamp used to be the mechanism — three abreast out of four photos, the rail ran
+ * out of travel one frame in, and the last frames all shared the last resting place.
+ * With a lap of clones behind the photographs no real frame reaches it any more, so it
+ * is a net rather than arithmetic: it stays because a future lap shorter than the row
+ * would put it back to work, and because scrollTo past the end is a silent lie
+ * otherwise.
  */
 function alvo(el: HTMLElement, i: number): number {
   const filho = el.children[i] as HTMLElement | undefined;
@@ -45,7 +48,13 @@ function alvo(el: HTMLElement, i: number): number {
   return Math.min(filho.offsetLeft, el.scrollWidth - el.clientWidth);
 }
 
-/** Which frame the rail is showing: the one whose resting place it sits nearest. */
+/**
+ * Which frame the rail is showing: the one whose resting place it sits nearest.
+ *
+ * Counts clones too, so this returns 0 … fotos+volta-1. Every caller that means a
+ * PHOTOGRAPH takes it modulo the number of photographs — the clone of frame 0 is
+ * frame 0 as far as the guest is concerned, which is the whole point of it.
+ */
 function indice(el: HTMLElement): number {
   let melhor = 0;
   for (let i = 1; i < el.children.length; i++) {
@@ -59,19 +68,27 @@ function indice(el: HTMLElement): number {
 }
 
 /**
- * How many places the rail actually stops at — which is what a dot stands for.
+ * How many frames stand side by side in the row.
  *
- * Not the number of photos: three abreast out of four, there are two stops, and a
- * dot for a photo that is never reached on its own would be a control that lies.
- * Zero when nothing is out of view, and then there is nothing to pass at all.
+ * This replaces a function that counted the rail's resting places, and the swap is the
+ * whole shape of the change. Stops used to be fewer than photographs — three abreast
+ * out of five, the rail ran out of travel and the last three shared one resting place,
+ * so a dot per photo would have been a control that lies. The lap of clones gives the
+ * rail enough travel for every photograph to reach the left edge, and then the count
+ * that matters is how many fit the row: it decides how long the lap has to be, and
+ * whether there is anything to pass at all.
+ *
+ * The step is the distance between two frames' left edges rather than width plus gap —
+ * one measurement instead of two, and no fractional pixel to drift at a breakpoint.
+ * Measured off real frames, because frames 0 and 1 are always photographs.
  */
-function paradas(el: HTMLElement): number {
-  const fim = el.scrollWidth - el.clientWidth;
-  if (fim <= 1) return 0;
-  for (let i = 0; i < el.children.length; i++) {
-    if ((el.children[i] as HTMLElement).offsetLeft >= fim - 1) return i + 1;
-  }
-  return el.children.length;
+function colunas(el: HTMLElement): number {
+  const filhos = Array.from(el.children) as HTMLElement[];
+  if (filhos.length < 2) return filhos.length;
+  const passo = filhos[1].offsetLeft - filhos[0].offsetLeft;
+  if (passo <= 0) return filhos.length;
+  const vao = parseFloat(getComputedStyle(el).columnGap) || 0;
+  return Math.round((el.clientWidth + vao) / passo);
 }
 
 /**
@@ -88,10 +105,35 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
   const [parado, setParado] = useState(false);
   const [encerrado, setEncerrado] = useState(false);
   const [menosMovimento, setMenosMovimento] = useState(false);
-  /** Stops, measured. 0 until the browser has laid the rail out — see below. */
-  const [pontos, setPontos] = useState(0);
+  /**
+   * Frames per row, measured. 0 until the browser has laid the rail out — see below.
+   *
+   * Everything about the loop falls out of this one number: how long the lap is, how
+   * many dots there are, and whether there is anything to pass.
+   */
+  const [cabem, setCabem] = useState(0);
   /** The frame this component itself put the rail on, last time it moved it. */
   const nosso = useRef(0);
+
+  const fotos = quadros.length;
+  /** Nothing to pass when every photograph is already in the row. */
+  const passa = cabem > 0 && cabem < fotos;
+  /**
+   * The lap: as many copies of the leading frames as fit the row.
+   *
+   * Exactly `cabem`, not one less. One less is enough for every photograph to reach
+   * the left edge, but not for the arrival to be invisible — resting on the first
+   * clone, the window shows that clone and the ones after it, and all of them have to
+   * exist. At exactly `cabem` the rail's travel equals one lap, which makes the trip
+   * home an exact subtraction instead of a number that nearly fits.
+   *
+   * Appended, never prepended. The first photograph has to rest at scrollLeft 0 — it
+   * is where the rail starts, where pressing the first dot returns to, and what the
+   * page shows to someone who asked for less motion.
+   */
+  const volta = passa ? Math.min(cabem, fotos) : 0;
+  /** One dot per photograph, now that the loop makes every one of them reachable. */
+  const pontos = passa ? fotos : 0;
 
   useEffect(() => {
     const consulta = matchMedia("(prefers-reduced-motion: reduce)");
@@ -101,13 +143,19 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
     return () => consulta.removeEventListener("change", ler);
   }, []);
 
-  // How many stops there are is a question only the laid-out page can answer: it
-  // depends on how many frames fit the row, which is the viewport's business. So it
-  // is measured, and measured again when the rail is resized across a breakpoint.
+  // How many frames fit the row is a question only the laid-out page can answer, and
+  // the answer is the viewport's business. So it is measured, and measured again when
+  // the rail is resized across a breakpoint.
+  //
+  // This is also why the lap is born on the client and never in the HTML: the server
+  // cannot know how wide the row is, and a lap rendered there would hand someone with
+  // no JavaScript a strip of repeated photographs with nothing to explain them. The
+  // first client render matches the server exactly — cabem is 0, so there are no
+  // clones — and the lap arrives with the measurement, one render later.
   useEffect(() => {
     const el = trilho.current;
     if (!el) return;
-    const medir = () => setPontos(paradas(el));
+    const medir = () => setCabem(colunas(el));
     medir();
     const observador = new ResizeObserver(medir);
     observador.observe(el);
@@ -142,13 +190,48 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
 
   function aoRolar(el: HTMLElement) {
     const i = indice(el);
-    setAceso(i);
+    // Modulo the photographs: sitting on the clone of frame 0, the guest is looking at
+    // frame 0, and the dot has to say so. It is also what makes the trip home
+    // invisible — the lit dot does not change when the rail jumps back.
+    setAceso(fotos > 0 ? i % fotos : 0);
 
     // A scroll arrives as a stream of events, so what counts is where the rail comes
     // to rest, not where it passes. Resting anywhere this component did not ask for
     // is a hand on the rail — and from there it is the guest's, not the clock's.
     const assentado = Math.abs(el.scrollLeft - alvo(el, i)) <= 1.5;
     if (assentado && i !== nosso.current) setEncerrado(true);
+  }
+
+  /**
+   * One frame of the rail — a photograph, or a copy of one.
+   *
+   * The width class is indexed by how many PHOTOGRAPHS there are, never by how many
+   * children the rail ends up with: the lap must not make the frames narrower, and
+   * LARGURA is a table of written-out strings precisely because a class assembled at
+   * runtime is a class Tailwind never generated.
+   */
+  function moldura(q: Quadro, chave: string, clone: boolean) {
+    return (
+      <li
+        key={chave}
+        {...(clone ? { "data-clone": true, "aria-hidden": true } : {})}
+        className={`relative aspect-4/5 shrink-0 snap-start overflow-hidden rounded-lg border border-areia/25 bg-musgo-claro ${
+          LARGURA[Math.min(3, fotos)]
+        }`}
+      >
+        {q.src ? (
+          <Image
+            src={q.src}
+            alt={clone ? "" : q.alt}
+            fill
+            sizes="(min-width: 1024px) 288px, (min-width: 640px) 328px, 100vw"
+            className="object-cover"
+          />
+        ) : (
+          <Sulcos className="absolute left-1/2 top-1/2 h-[78%] w-[78%] -translate-x-1/2 -translate-y-1/2 text-areia opacity-[0.22]" />
+        )}
+      </li>
+    );
   }
 
   return (
@@ -185,26 +268,16 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
         onBlur={() => setParado(false)}
         className="relative flex w-full snap-x snap-mandatory gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {quadros.map((q) => (
-          <li
-            key={q.id}
-            className={`relative aspect-4/5 shrink-0 snap-start overflow-hidden rounded-lg border border-areia/25 bg-musgo-claro ${
-              LARGURA[Math.min(3, quadros.length)]
-            }`}
-          >
-            {q.src ? (
-              <Image
-                src={q.src}
-                alt={q.alt}
-                fill
-                sizes="(min-width: 1024px) 288px, (min-width: 640px) 328px, 100vw"
-                className="object-cover"
-              />
-            ) : (
-              <Sulcos className="absolute left-1/2 top-1/2 h-[78%] w-[78%] -translate-x-1/2 -translate-y-1/2 text-areia opacity-[0.22]" />
-            )}
-          </li>
-        ))}
+        {quadros.map((q) => moldura(q, q.id, false))}
+        {/* The lap. Copies, not photographs: hidden from the accessibility tree as a
+            whole and given an empty alt inside as well, so a guest using a screen
+            reader hears five rooms and not eight.
+
+            aria-hidden is right here and would be wrong on the dock in Atalhos.tsx,
+            which says so in its own comment — the difference is that nothing in a
+            frame can take focus. The image is a plain <img>: images.unoptimized means
+            next/image adds no wrapper and no tabindex of its own. */}
+        {quadros.slice(0, volta).map((q) => moldura(q, `volta-${q.id}`, true))}
       </ul>
 
       {pontos > 1 && (
@@ -217,7 +290,7 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
             // min-h-12, and a dot sitting exactly on the 44px floor measured 43.9998
             // the moment the section above it landed on a fractional pixel row.
             <button
-              key={quadros[i]?.id ?? i}
+              key={quadros[i].id}
               type="button"
               data-ponto={i}
               aria-current={i === aceso}
