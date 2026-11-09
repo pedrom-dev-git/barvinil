@@ -436,6 +436,37 @@ test("a virada custa uma batida, não uma pausa", async ({ page }) => {
   ).toBeLessThan(INTERVALO * 2);
 });
 
+test("o salto pra casa espera o dedo sair", async ({ page }) => {
+  await comOQuePassar(page);
+  const trilho = page.locator(TRILHO);
+
+  // The classic failure of a carousel that loops by jumping. People stop mid-drag to
+  // look at a photograph, and a finger held still for longer than the quiet period
+  // reads as rest — so the rail comes home, the content moves out from under the
+  // finger, and the browser carries on dragging from the new offset. The strip jumps a
+  // whole lap, in the hand of someone who was holding it still.
+  //
+  // Nothing else in this suite reaches that branch: every other test moves the rail
+  // without a pointer, so `emMao` is false throughout and the trip home runs freely.
+  await trilho.dispatchEvent("pointerdown");
+  await trilho
+    .evaluate((el) => el.scrollTo({ left: el.scrollWidth - el.clientWidth, behavior: "instant" }));
+
+  // 600ms is five times the quiet period: not a race, a decision.
+  await page.waitForTimeout(600);
+  expect(
+    await rolagem(page),
+    "o trilho voltou pra casa com o dedo ainda apoiado",
+  ).toBeGreaterThan(0);
+
+  // And the release is what has to ask again. By then the rail has been still far
+  // longer than the quiet period and no further scroll event is coming to re-arm the
+  // check — so without that second call the guest would be left parked on a clone,
+  // at the end of a rail with nowhere further to go.
+  await trilho.dispatchEvent("pointerup");
+  await expect.poll(() => rolagem(page), { timeout: 5_000 }).toBe(0);
+});
+
 test("the rail is as wide as the section it sits in", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "é a largura do desktop que estava errada");
 
