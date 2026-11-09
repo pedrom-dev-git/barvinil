@@ -243,10 +243,15 @@ test("the gallery leads with the photos it has, and never shows a broken one", a
   );
   const n = disponiveis.length;
 
-  const quadros = page.locator("section#fotos li");
+  // Frames that are photographs, not every child of the rail: it carries a lap of
+  // clones at its tail so the slideshow can loop without rewinding, and counting
+  // those here would turn this into a test that passes while measuring nothing.
+  // The order below survives because the clones are a tail — the photographs are
+  // still the first n children, in the order content/site.ts lists them.
+  const quadros = page.locator("section#fotos li:not([data-clone])");
   // Only photos ride the rail; the groove frames are for having none at all.
   await expect(quadros).toHaveCount(n || 3);
-  await expect(page.locator("section#fotos li img")).toHaveCount(n);
+  await expect(quadros.locator("img")).toHaveCount(n);
 
   for (let i = 0; i < n; i++) {
     await expect(quadros.nth(i).locator("img")).toHaveAttribute("alt", disponiveis[i].alt);

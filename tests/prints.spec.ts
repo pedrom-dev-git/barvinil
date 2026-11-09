@@ -235,7 +235,7 @@ test.describe("prints", () => {
       for (const id of ["hero", "casa", "fotos", "onde", "reservar"]) {
         await expect(page.locator(`section#${id}`)).toBeAttached();
       }
-      await expect(page.locator("section#fotos li img")).toHaveCount(COM_FOTO);
+      await expect(page.locator("section#fotos li:not([data-clone]) img")).toHaveCount(COM_FOTO);
       await expect(page.getByRole("contentinfo")).toContainText(/prot[óo]tipo/i);
       await guardar(page, "07-desktop-pagina-completa.png", { fullPage: true });
     });
@@ -245,7 +245,8 @@ test.describe("prints", () => {
       // The house still owes photos — but the slideshow passes only what exists. An
       // empty frame caught in a print reads as a broken image, not as "em andamento",
       // and the slide has a caption to say that part.
-      const molduras = page.locator("section#fotos li");
+      // The photographs, not the lap of clones the rail carries to loop on.
+      const molduras = page.locator("section#fotos li:not([data-clone])");
       await expect(molduras).toHaveCount(COM_FOTO);
       await expect(molduras.locator("img")).toHaveCount(COM_FOTO);
 

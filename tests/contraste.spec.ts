@@ -164,10 +164,19 @@ test("o ponto apagado do passa-fotos é visível (3:1)", async ({ page }) => {
   // row there is no stop to show and no dot to measure. Asked of the rail and not of
   // the dots, because the dots are measured after hydration — counting them first
   // reads zero and skips a case the desktop very much has.
-  const sobra = await page
-    .locator("section#fotos [data-passa-fotos]")
-    .evaluate((el) => el.scrollWidth - el.clientWidth);
-  test.skip(sobra <= 1, "as fotos cabem todas na fileira: não há ponto");
+  // Asked of the photographs and the row, never of scrollWidth - clientWidth: the
+  // rail carries a lap of clones, so there is always something out of view and that
+  // subtraction would stop answering "is there anything to pass?" while still
+  // looking like it does — a skip that never fires is as bad as one that always does.
+  const passa = await page.locator("section#fotos [data-passa-fotos]").evaluate((el) => {
+    const filhos = Array.from(el.children) as HTMLElement[];
+    const fotos = el.querySelectorAll("li:not([data-clone])").length;
+    if (filhos.length < 2) return false;
+    const passo = filhos[1].offsetLeft - filhos[0].offsetLeft;
+    const vao = parseFloat(getComputedStyle(el).columnGap) || 0;
+    return Math.round((el.clientWidth + vao) / passo) < fotos;
+  });
+  test.skip(!passa, "as fotos cabem todas na fileira: não há ponto");
   await expect(page.locator("section#fotos [data-ponto]").first()).toBeVisible();
 
   const apagado = page.locator('section#fotos [data-ponto]:not([aria-current="true"]) span').first();

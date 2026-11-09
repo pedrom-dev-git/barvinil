@@ -118,9 +118,18 @@ test.describe("o passa-fotos, com o dedo", () => {
     // To the end of the travel, not to clientWidth × i: frames are separated by a
     // gap now, so a multiple of the view is a place the rail does not come to rest,
     // and a rail left between two frames is not a hand that chose one.
-    await page
-      .locator("[data-passa-fotos]")
-      .evaluate((el) => el.scrollTo({ left: el.scrollWidth - el.clientWidth, behavior: "instant" }));
+    // To the last PHOTOGRAPH's resting place, clamped — not to the end of the
+    // travel. The two coincide only while the rail ends at the last photo; behind it
+    // there is now a lap of clones, and aiming at the end of the travel would land
+    // the hand on a copy of the first frame instead.
+    await page.locator("[data-passa-fotos]").evaluate((el) => {
+      const fotos = el.querySelectorAll("li:not([data-clone])");
+      const ultima = fotos[fotos.length - 1] as HTMLElement;
+      el.scrollTo({
+        left: Math.min(ultima.offsetLeft, el.scrollWidth - el.clientWidth),
+        behavior: "instant",
+      });
+    });
     await expect.poll(() => aceso(page)).toBe(String(n - 1));
 
     await page.waitForTimeout(7000);

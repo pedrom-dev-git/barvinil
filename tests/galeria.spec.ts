@@ -18,6 +18,17 @@ import type { Page } from "@playwright/test";
 const TRILHO = "section#fotos [data-passa-fotos]";
 const PONTO = "section#fotos [data-ponto]";
 
+/**
+ * A frame that is a photograph.
+ *
+ * The rail will carry a lap of clones at its tail, so that every photo can reach the
+ * left edge and the loop never has to rewind. A clone is a copy of a frame, marked
+ * `data-clone`, hidden from assistive technology, and counted by nothing: anything in
+ * this suite that means "the photos" has to say so, or it will quietly start counting
+ * the lap as well and pass while measuring nothing.
+ */
+const MOLDURA = "section#fotos li:not([data-clone])";
+
 /** Index of the frame the rail is showing, as the lit dot reports it. */
 const aceso = (page: Page) =>
   page.locator(`${PONTO}[aria-current="true"]`).getAttribute("data-ponto");
@@ -27,13 +38,38 @@ const rolagem = (page: Page) => page.locator(TRILHO).evaluate((el) => el.scrollL
 /** Dots, which are the positions the rail stops at — not the photos. */
 const paradas = (page: Page) => page.locator(PONTO).count();
 
-/** What is out of view, in pixels. Zero when every photo already fits the row. */
-const sobra = (page: Page) =>
-  page.locator(TRILHO).evaluate((el) => el.scrollWidth - el.clientWidth);
+const reais = (page: Page) => page.locator(MOLDURA).count();
 
-/** Guards the tests that drive the passing: with nothing out of view, there is none. */
+/**
+ * How many frames stand side by side in the row, measured off the laid-out rail.
+ *
+ * The step is read as the distance between two frames' left edges rather than from
+ * the width plus the gap: it is one number instead of two, and it cannot drift by a
+ * fractional pixel at a breakpoint.
+ */
+const colunas = (page: Page) =>
+  page.locator(TRILHO).evaluate((el) => {
+    const filhos = Array.from(el.children) as HTMLElement[];
+    if (filhos.length < 2) return filhos.length;
+    const passo = filhos[1].offsetLeft - filhos[0].offsetLeft;
+    const vao = parseFloat(getComputedStyle(el).columnGap) || 0;
+    return Math.round((el.clientWidth + vao) / passo);
+  });
+
+/**
+ * Guards the tests that drive the passing: with every photo already in the row, there
+ * is nothing to pass.
+ *
+ * Asked of the photographs and the row, never of `scrollWidth - clientWidth`. Once the
+ * rail carries a lap of clones there is ALWAYS something out of view — the clones are
+ * what is out of view — so that subtraction stops answering this question and starts
+ * answering a different one, while still looking right.
+ */
 async function comOQuePassar(page: Page) {
-  test.skip((await sobra(page)) <= 1, "as fotos cabem todas na fileira: não há o que passar");
+  test.skip(
+    (await colunas(page)) >= (await reais(page)),
+    "as fotos cabem todas na fileira: não há o que passar",
+  );
   // The dots are measured off the laid-out rail, so they arrive with hydration and
   // not with the HTML. Counting them before that reads zero and tests nothing.
   await expect(page.locator(PONTO).first()).toBeVisible();
@@ -107,9 +143,18 @@ test("swiping by hand lights the dot of the frame it landed on", async ({ page }
   // What is under test is the dot following the rail, so the clock is held still
   // first: a tick landing mid-swipe would be testing two things at once.
   await page.locator(TRILHO).hover();
-  await page
-    .locator(TRILHO)
-    .evaluate((el) => el.scrollTo({ left: el.scrollWidth - el.clientWidth, behavior: "instant" }));
+  // To the last PHOTOGRAPH's resting place, clamped — not to the end of the travel.
+  // The two are the same thing only while the rail ends at the last photo; with a lap
+  // of clones behind it, the end of the travel is a copy of the first frame, and a
+  // test that aims there stops being about a hand landing on the last photo.
+  await page.locator(TRILHO).evaluate((el) => {
+    const fotos = el.querySelectorAll("li:not([data-clone])");
+    const ultima = fotos[fotos.length - 1] as HTMLElement;
+    el.scrollTo({
+      left: Math.min(ultima.offsetLeft, el.scrollWidth - el.clientWidth),
+      behavior: "instant",
+    });
+  });
 
   await expect.poll(() => aceso(page)).toBe(String(n - 1));
 });
@@ -118,33 +163,53 @@ test("an empty frame never rides along with the photos", async ({ page }) => {
   // In a slideshow an empty frame is not texture beside two photos: it is a frame
   // of nothing the clock walks the guest into, looking like an image that failed
   // to load. The groove frame is for having no photos at all.
-  const fotos = await page.locator("section#fotos li img").count();
-  const molduras = await page.locator("section#fotos li").count();
+  const fotos = await page.locator(`${MOLDURA} img`).count();
+  const molduras = await page.locator(MOLDURA).count();
 
   expect(molduras).toBe(fotos || 3);
+
+  // And no clone is empty either. A clone of a groove frame would be a frame of
+  // nothing that the guest cannot even reach a dot for.
+  const clonesVazios = await page
+    .locator("section#fotos li[data-clone]")
+    .evaluateAll((lis) => lis.filter((li) => !li.querySelector("img")).length);
+  expect(clonesVazios, "há clone sem foto dentro").toBe(0);
+});
+
+test("a lista que um leitor de tela ouve tem uma foto por foto", async ({ page }) => {
+  // The rail is a <ul>, so what assistive technology hears is a list with a length.
+  // The lap of clones must not be in it — a guest hearing "list, 8 items" over five
+  // photographs is being told the house has more rooms than it has.
+  const naLista = await page.locator(TRILHO).getByRole("listitem").count();
+  expect(naLista, "a lista acessível não bate com as fotos").toBe(await reais(page));
 });
 
 test("the row fills the width, one photo on a phone and up to three on a desktop", async ({
   page,
 }, testInfo) => {
-  const { molduras, visivel, largura, total, vao } = await page.locator(TRILHO).evaluate((el) => {
-    const filhos = Array.from(el.children) as HTMLElement[];
-    return {
-      molduras: filhos.length,
-      visivel: el.clientWidth,
-      largura: filhos[0].getBoundingClientRect().width,
-      total: el.scrollWidth,
-      vao: parseFloat(getComputedStyle(el).columnGap) || 0,
-    };
-  });
+  const { molduras, filhos, visivel, largura, total, vao } = await page
+    .locator(TRILHO)
+    .evaluate((el) => {
+      const filhos = Array.from(el.children) as HTMLElement[];
+      return {
+        molduras: el.querySelectorAll("li:not([data-clone])").length,
+        filhos: filhos.length,
+        visivel: el.clientWidth,
+        largura: filhos[0].getBoundingClientRect().width,
+        total: el.scrollWidth,
+        vao: parseFloat(getComputedStyle(el).columnGap) || 0,
+      };
+    });
 
   // Three abreast is the ceiling, not the rule: with fewer photos than that the
   // frames widen to fill the row, so the house still owing four photos never shows
   // as a hole where the rest would go.
-  const colunas = testInfo.project.name === "mobile" ? 1 : Math.min(3, molduras);
+  const porFileira = testInfo.project.name === "mobile" ? 1 : Math.min(3, molduras);
 
-  expect(largura).toBeCloseTo((visivel - vao * (colunas - 1)) / colunas, 0);
-  expect(total).toBeCloseTo(largura * molduras + vao * (molduras - 1), 0);
+  expect(largura).toBeCloseTo((visivel - vao * (porFileira - 1)) / porFileira, 0);
+  // The travel is over every child, clones included — they are frames of the same
+  // width sharing the same gap, and the rail has to account for them too.
+  expect(total).toBeCloseTo(largura * filhos + vao * (filhos - 1), 0);
 });
 
 test("the rail is as wide as the section it sits in", async ({ page }, testInfo) => {
