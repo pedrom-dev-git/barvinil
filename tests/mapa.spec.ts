@@ -129,9 +129,59 @@ test("a página diz ao visitante que o mapa vem do Google", async ({ page }) => 
   await expect(aviso).toContainText(/ip/i);
 });
 
-test("o quadrado é quadrado, nas duas larguras", async ({ page }) => {
-  const caixa = (await page.locator(MAPA).boundingBox())!;
-  expect(Math.abs(caixa.width - caixa.height), `${caixa.width}x${caixa.height}`).toBeLessThanOrEqual(
+test("o mapa é uma faixa larga, e ocupa a seção de ponta a ponta", async ({
+  page,
+}, testInfo) => {
+  // It was a 384px square in the right-hand column, and that was the whole problem:
+  // the grid matched the left column to it, so the address — which ends 211px in —
+  // sat over 170px of nothing. Measured before the change, on both viewports.
+  //
+  // As a band there is no second column to match, and the map gets the job it is
+  // actually for: showing the block the house is on, which is wide, not tall.
+  const moldura = (await page.locator("section#onde [data-mapa]").boundingBox())!;
+  const titulo = (await page.locator("section#onde h2").boundingBox())!;
+
+  const proporcao = moldura.width / moldura.height;
+  const esperada = testInfo.project.name === "mobile" ? 4 / 3 : 3;
+  expect(proporcao, `${Math.round(moldura.width)}x${Math.round(moldura.height)}`).toBeCloseTo(
+    esperada,
     1,
   );
+
+  // Full width of the section's column, aligned with the heading — not inset into
+  // half of it. 2px of slack for the frame's own border.
+  expect(Math.abs(moldura.x - titulo.x), "o mapa não começa na margem da seção").toBeLessThanOrEqual(
+    2,
+  );
+  expect(moldura.width).toBeGreaterThanOrEqual(titulo.width - 2);
+});
+
+test("a seção não tem coluna vazia embaixo do texto", async ({ page }) => {
+  // The failure this replaces, stated as a rule: nothing in #onde may leave a column
+  // of empty space taller than a line of type. Measured against the band's top edge,
+  // because that is where the old void lived — between the end of the address block
+  // and the bottom of the square beside it.
+  const { vaoAbaixoDoTexto } = await page.locator("section#onde").evaluate((secao) => {
+    const mapa = secao.querySelector("[data-mapa]")!.getBoundingClientRect();
+    const ultimo = secao.querySelector("a")!.getBoundingClientRect();
+    return { vaoAbaixoDoTexto: mapa.top - ultimo.bottom };
+  });
+  expect(vaoAbaixoDoTexto, "vão entre o último texto e o mapa").toBeLessThanOrEqual(80);
+  expect(vaoAbaixoDoTexto, "o mapa encostou no texto").toBeGreaterThanOrEqual(16);
+});
+
+test("o mapa entra na paleta da casa, em vez de abrir um buraco branco nela", async ({
+  page,
+}) => {
+  // Google serves a light map and this page is #143325 throughout. At 384px the
+  // white was the brightest, largest object on the whole landing — louder than the
+  // photographs, in a section that is supposed to be a detail.
+  //
+  // Asserted on the computed filter rather than on pixels: the tiles do not paint on
+  // every network, and a pixel test would be measuring the weather.
+  const filtro = await page
+    .locator("section#onde [data-mapa] iframe")
+    .evaluate((el) => getComputedStyle(el).filter);
+  expect(filtro, "o mapa está sem tratamento de brilho").not.toBe("none");
+  expect(filtro).toMatch(/invert/);
 });
