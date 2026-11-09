@@ -178,9 +178,18 @@ test("an empty frame never rides along with the photos", async ({ page }) => {
 
   // And no clone is empty either. A clone of a groove frame would be a frame of
   // nothing that the guest cannot even reach a dot for.
-  const clonesVazios = await page
-    .locator("section#fotos li[data-clone]")
-    .evaluateAll((lis) => lis.filter((li) => !li.querySelector("img")).length);
+  //
+  // The wait is the test. The lap is born of a measurement taken after hydration, so
+  // for a moment after the rail is visible there are no clones at all — and a filter
+  // over nothing is a filter that never finds anything. Measured: this half passed a
+  // mutation that gave every clone a groove frame instead of a photograph.
+  await comOQuePassar(page);
+  const clones = page.locator("section#fotos li[data-clone]");
+  expect(await clones.count(), "o trilho não carrega volta nenhuma").toBeGreaterThan(0);
+
+  const clonesVazios = await clones.evaluateAll(
+    (lis) => lis.filter((li) => !li.querySelector("img")).length,
+  );
   expect(clonesVazios, "há clone sem foto dentro").toBe(0);
 });
 
@@ -188,6 +197,18 @@ test("a lista que um leitor de tela ouve tem uma foto por foto", async ({ page }
   // The rail is a <ul>, so what assistive technology hears is a list with a length.
   // The lap of clones must not be in it — a guest hearing "list, 8 items" over five
   // photographs is being told the house has more rooms than it has.
+  //
+  // Which only means anything once the lap exists. It is born of a measurement taken
+  // after hydration, and this test used to read the list before that: five items over
+  // five photographs, with nothing hidden, passing for the wrong reason. Proven — the
+  // aria-hidden was removed from the clones and this stayed green while the test that
+  // names them went red.
+  await comOQuePassar(page);
+  expect(
+    await page.locator("section#fotos li[data-clone]").count(),
+    "o trilho não carrega volta nenhuma",
+  ).toBeGreaterThan(0);
+
   const naLista = await page.locator(TRILHO).getByRole("listitem").count();
   expect(naLista, "a lista acessível não bate com as fotos").toBe(await reais(page));
 });
