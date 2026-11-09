@@ -277,6 +277,78 @@ test("os clones não são fotos para quem usa leitor de tela", async ({ page }) 
   expect(alts.every((a) => a === ""), "clone com alt escrito").toBe(true);
 });
 
+test("as fotos só entram pela direita", async ({ page }) => {
+  await comOQuePassar(page);
+  test.setTimeout(60_000);
+
+  // The complaint this whole change answers, written as a measurement: "ele vai pro
+  // lado e para". What the rail used to do at the end of the row was scroll all the
+  // way back, sweeping every photograph in reverse — a rewind, which reads as the
+  // gallery giving up and starting over.
+  //
+  // So the trajectory itself is the subject. A rewind leaves a long run of small
+  // decreases; a teleport leaves exactly one, the size of a lap, with nothing gradual
+  // anywhere. The recorder lives in the page because sampling scrollLeft from the test
+  // would measure Playwright's round trip instead of the rail's motion.
+  const volta = await page
+    .locator(TRILHO)
+    .evaluate((el) => (el.children[el.querySelectorAll("li:not([data-clone])").length] as HTMLElement).offsetLeft);
+
+  const amostras = await page.locator(TRILHO).evaluate(
+    (el, ms) =>
+      new Promise<number[]>((pronto) => {
+        const xs: number[] = [el.scrollLeft];
+        const ouvir = () => xs.push(el.scrollLeft);
+        el.addEventListener("scroll", ouvir);
+        setTimeout(() => {
+          el.removeEventListener("scroll", ouvir);
+          pronto(xs);
+        }, ms);
+      }),
+    // One lap is five photographs at five seconds each: the wrap happens at ~25s, and
+    // 34s clears it without paying for a second lap the assertions do not need.
+    34_000,
+  );
+
+  // 2px of slack, because a snap container can settle onto its stop from either side.
+  const quedas = amostras
+    .slice(1)
+    .map((x, i) => amostras[i] - x)
+    .filter((d) => d > 2);
+
+  const gradual = quedas.filter((d) => d < volta / 2);
+  expect(
+    gradual.length,
+    `o trilho rebobinou: ${gradual.length} recuos pequenos (${gradual.slice(0, 6).join(", ")})`,
+  ).toBe(0);
+
+  expect(quedas.length, "o trilho nunca voltou ao começo").toBeGreaterThanOrEqual(1);
+  for (const salto of quedas) {
+    expect(salto, "a volta não foi de exatamente uma volta").toBeCloseTo(volta, 0);
+  }
+});
+
+test("a mão na zona de clones recebe a primeira foto de volta", async ({ page }) => {
+  await comOQuePassar(page);
+
+  // The furthest a hand can get is the first clone, which looks exactly like the first
+  // photograph — and has to BECOME it, or the rail is left sitting at the end of its
+  // travel with nowhere further to go, which is the dead end the loop exists to
+  // remove.
+  await page
+    .locator(TRILHO)
+    .evaluate((el) => el.scrollTo({ left: el.scrollWidth - el.clientWidth, behavior: "instant" }));
+
+  await expect.poll(() => rolagem(page), { timeout: 5_000 }).toBe(0);
+  expect(await aceso(page)).toBe("0");
+
+  // And the hand still holds the clock: coming home is the component's own doing, not
+  // a reason to start passing photos under someone who just took hold of the rail.
+  await page.waitForTimeout(7000);
+  expect(await rolagem(page), "o rodízio voltou a andar com a mão no trilho").toBe(0);
+  expect(await aceso(page)).toBe("0");
+});
+
 test("the rail is as wide as the section it sits in", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === "mobile", "é a largura do desktop que estava errada");
 
