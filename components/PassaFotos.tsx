@@ -31,6 +31,19 @@ const INTERVALO = 5000;
 const ASSENTA = 120;
 
 /**
+ * How long a hand holds the rail before the clock takes it back.
+ *
+ * Three beats, written as three beats: long enough to finish looking at the photograph
+ * you stopped on, short enough that the gallery is never dead. It used to be forever,
+ * which respected the choice and answered "ele vai pro lado e para" with yes.
+ *
+ * The cost is real and was accepted rather than hidden: press the third dot, and
+ * fifteen seconds later you are somewhere else. A gallery that stops for good on the
+ * first touch is the worse of the two.
+ */
+const RETOMA = 3 * INTERVALO;
+
+/**
  * How wide a frame is, by how many stand side by side at the widest viewport.
  *
  * Three abreast is the ceiling, not the rule: the house still owes four of the six
@@ -119,7 +132,17 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
   const trilho = useRef<HTMLUListElement>(null);
   const [aceso, setAceso] = useState(0);
   const [parado, setParado] = useState(false);
-  const [encerrado, setEncerrado] = useState(false);
+  /**
+   * A hand has the rail. Separate from `parado`, and the two are not the same shape.
+   *
+   * A mouse leaving is an event, so `parado` can wait for it. A finger has no matching
+   * leave — that is the whole reason this component never paused on touch — so what
+   * ends this one is time. Folded into a single flag, one of them would be wrong: a
+   * mouse resting on the gallery would have the clock start under it after fifteen
+   * seconds, or a pointerleave would cancel a timer that a finger is still waiting on.
+   * Two reasons, held apart, OR'd where the clock reads them.
+   */
+  const [pausado, setPausado] = useState(false);
   const [menosMovimento, setMenosMovimento] = useState(false);
   /**
    * Frames per row, measured. 0 until the browser has laid the rail out — see below.
@@ -132,6 +155,8 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
   const nosso = useRef(0);
   /** Pending "the rail has gone quiet" check. */
   const assento = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Pending "the hand has had long enough" timer. */
+  const retomada = useRef<ReturnType<typeof setTimeout> | null>(null);
   /**
    * A finger is on the rail right now.
    *
@@ -197,13 +222,14 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
     return () => {
       observador.disconnect();
       if (assento.current) clearTimeout(assento.current);
+      if (retomada.current) clearTimeout(retomada.current);
     };
   }, [quadros.length]);
 
   // Movement is opt-in, same stance as .gira in globals.css: for anyone who asked
   // for less motion there is no timer at all, not a timer that gets overridden.
   useEffect(() => {
-    if (menosMovimento || parado || encerrado || pontos < 2) return;
+    if (menosMovimento || parado || pausado || pontos < 2) return;
     const relogio = setInterval(() => {
       const el = trilho.current;
       if (!el) return;
@@ -218,7 +244,22 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
       rolar(el, Math.min(indice(el) + 1, el.children.length - 1), "smooth");
     }, INTERVALO);
     return () => clearInterval(relogio);
-  }, [menosMovimento, parado, encerrado, pontos]);
+    // `pausado` being a dependency is how the guest gets a whole beat back: coming off
+    // the pause rebuilds the interval, so the photograph they are on gets its five
+    // seconds rather than whatever was left of a tick that kept running underneath.
+  }, [menosMovimento, parado, pausado, pontos]);
+
+  /**
+   * The rail is the guest's for a while.
+   *
+   * Re-armed rather than queued, so three touches in a row mean fifteen seconds from
+   * the last one and not forty-five from the first.
+   */
+  function pausar() {
+    setPausado(true);
+    if (retomada.current) clearTimeout(retomada.current);
+    retomada.current = setTimeout(() => setPausado(false), RETOMA);
+  }
 
   /** Scrolls the rail, claiming the frame so arriving there does not read as a swipe. */
   function rolar(el: HTMLElement, i: number, comportamento: ScrollBehavior) {
@@ -229,8 +270,10 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
   function irPara(i: number) {
     const el = trilho.current;
     if (!el) return;
-    // Having chosen a photo, the guest is not carried off it five seconds later.
-    setEncerrado(true);
+    // Having chosen a photo, the guest is not carried off it five seconds later —
+    // fifteen, and only because a gallery that never moves again is worse than one
+    // that eventually moves on.
+    pausar();
     rolar(el, i, menosMovimento ? "auto" : "smooth");
   }
 
@@ -264,7 +307,7 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
     // frame this component asked for, and a guest who dragged to the end of the lap
     // would have the slideshow start up again under their finger.
     const noLugar = Math.abs(el.scrollLeft - alvo(el, i)) <= 1.5;
-    if (noLugar && i !== nosso.current) setEncerrado(true);
+    if (noLugar && i !== nosso.current) pausar();
 
     // And then home. By index, never by subtracting a lap's worth of pixels: offsetLeft
     // is a whole number and already a snap position, while scrollLeft minus a lap can
@@ -344,6 +387,16 @@ export function PassaFotos({ quadros }: { quadros: ReadonlyArray<Quadro> }) {
         // scroll event is coming to re-arm the check.
         onPointerDown={() => {
           emMao.current = true;
+        }}
+        // A wheel and the arrow keys move the rail without a pointer ever going down,
+        // and both say the same thing a finger does. The settled check below would
+        // reach the same conclusion 120ms later; saying it here means the clock does
+        // not get one more tick in while the guest is still arriving.
+        onWheel={pausar}
+        onKeyDown={(e) => {
+          if (e.key.startsWith("Arrow") || ["Home", "End", "PageUp", "PageDown"].includes(e.key)) {
+            pausar();
+          }
         }}
         onPointerUp={(e) => {
           emMao.current = false;
