@@ -170,12 +170,43 @@ test("a seção não tem coluna vazia embaixo do texto", async ({ page }) => {
   expect(vaoAbaixoDoTexto, "o mapa encostou no texto").toBeGreaterThanOrEqual(16);
 });
 
-test("o mapa entra na paleta da casa, em vez de abrir um buraco branco nela", async ({
-  page,
-}) => {
-  // Google serves a light map and this page is #143325 throughout. At 384px the
-  // white was the brightest, largest object on the whole landing — louder than the
-  // photographs, in a section that is supposed to be a detail.
+test("a atribuição da Google não é cortada pela moldura", async ({ page }) => {
+  // The one thing here that would move a theoretical risk into a written violation.
+  //
+  // The frame is `overflow-hidden`, for its rounded corners. Today the aspect ratio
+  // lives on the iframe and the frame takes its height, so nothing is clipped — but
+  // moving the ratio up to the frame is the obvious tidy-up, and it would crop
+  // whatever the iframe exceeds. What sits along the bottom of a Google embed is
+  // "Dados do mapa ©2026 Google" and the link to their terms, and their policies say
+  // in so many words not to remove, obscure or hide it.
+  //
+  // The band's own tests measure `[data-mapa]`, which cannot tell a whole map from a
+  // clipped one: both boxes are the right size. This measures the relationship —
+  // nothing of the iframe may fall outside the frame that hides overflow. Asked for
+  // by the security review of 2026-11-08; it passes today, and exists for the day
+  // somebody moves one class.
+  const { sobraAbaixo, sobraLateral } = await page
+    .locator("section#onde [data-mapa]")
+    .evaluate((frame) => {
+      const f = frame.getBoundingClientRect();
+      const i = frame.querySelector("iframe")!.getBoundingClientRect();
+      return {
+        sobraAbaixo: Math.round(i.bottom - f.bottom),
+        sobraLateral: Math.round(Math.max(i.right - f.right, f.left - i.left)),
+      };
+    });
+  expect(sobraAbaixo, "a moldura está cortando o pé do mapa, onde fica a atribuição").toBeLessThanOrEqual(
+    0,
+  );
+  expect(sobraLateral, "a moldura está cortando a lateral do mapa").toBeLessThanOrEqual(0);
+});
+
+test("o mapa é escurecido antes de entrar na página", async ({ page }) => {
+  // Named for what it measures, which is that a filter is applied — not that the
+  // result matches the house's palette. It does not: inverted, the map's land is a
+  // warm near-neutral and sits about 1,05:1 from the musgo behind it, so the frame's
+  // border is what gives it an edge. The point of the filter is that the map stops
+  // being the brightest object on the landing, and that is as far as this goes.
   //
   // Asserted on the computed filter rather than on pixels: the tiles do not paint on
   // every network, and a pixel test would be measuring the weather.
