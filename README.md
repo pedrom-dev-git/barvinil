@@ -100,6 +100,31 @@ fixa no pé do telefone fica exatamente onde esta página põe os botões de env
 aberto é **CSS** e não JavaScript (`body:has([data-painel-reserva]:not([inert]))`): o
 `IntersectionObserver` é assíncrono e a checagem de ponteiro do browser não espera por ele.
 
+## O passa-fotos, que agora dá a volta
+
+A galeria passa sozinha, 5 s por foto, e **não termina**: depois da última, a primeira entra pela
+direita como qualquer outra. Não há rebobinar e não há meia-volta.
+
+Como (`components/PassaFotos.tsx`): o trilho carrega, depois das fotos, uma **volta de clones** — tantas
+cópias dos primeiros quadros quantas cabem na fileira. Isso dá ao trilho curso exatamente igual a uma
+volta, então o mais longe que dá para chegar é o primeiro clone, que é a primeira foto pixel a pixel.
+Quando o trilho fica quieto por 120 ms ali, ele salta para o quadro real equivalente — **por índice,
+nunca subtraindo pixels**, porque `offsetLeft` é inteiro e já é posição de encaixe. Nada se mexe na
+tela: mesma imagem, mesma escala, até o ponto aceso é o mesmo.
+
+Os clones **nascem no cliente**, nunca no HTML: o servidor não sabe a largura da fileira, e uma volta
+renderizada lá entregaria a quem está sem JavaScript uma tira de fotos repetidas sem explicação. São
+`aria-hidden` com `alt=""`, então quem usa leitor de tela ouve cinco fotos e não oito — há teste.
+
+**Mão no trilho pausa por 15 s, não encerra.** Era um trinco de uma via: qualquer toque matava o
+rodízio para sempre. O preço da troca está assumido — aperte o terceiro ponto e 15 s depois você está
+em outra foto —, e a razão é que galeria morta é pior que galeria que segue andando.
+
+⚠️ **O que nenhum Chromium prova:** escrever `scrollLeft` durante o arremesso com momentum do WebKit
+tem histórico de salto visível no iPhone. Os 120 ms de silêncio garantem que o arremesso acabou, e o
+salto nunca roda com o dedo ainda apoiado — mas isso só se prova no aparelho. É o passo 9 do roteiro
+de teste em iPhone.
+
 ## Duas decisões que explicam o código
 
 **Mobile-first não é figura de linguagem.** O estilo base é o viewport pequeno e `sm:`/`md:`/`lg:`
