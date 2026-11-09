@@ -79,13 +79,19 @@ export function OndeQuando() {
           // shape wider than it is high.
           <div
             data-mapa
-            // ⚠️ The `aspect-*` belongs on the iframe below, NEVER here. This wrapper
-            // is `overflow-hidden` for the rounded corners, so giving it the ratio
-            // would crop whatever the iframe is taller than — and what sits at the
-            // bottom of a Google embed is the attribution strip. Cropping that is the
-            // one thing Google's terms forbid in so many words. Guarded in
-            // tests/mapa.spec.ts, because measuring this frame's box alone cannot
-            // tell a whole map from a clipped one.
+            // ⚠️ The height belongs to the iframe below, NEVER to this wrapper. It is
+            // `overflow-hidden` for the rounded corners, so a frame shorter than the
+            // map cuts off whatever sticks out — and what sits along the bottom of a
+            // Google embed is the attribution strip. Removing, obscuring or hiding
+            // that is the one thing Google's terms forbid in so many words.
+            //
+            // Two different ways to get this wrong, and no single test sees both:
+            // give the frame a height of its own and it crops the map
+            // (tests/mapa.spec.ts, "a atribuição da Google não é cortada"); move the
+            // `aspect-*` up here instead and the iframe loses its height, falls back
+            // to the 150px default and the band becomes a stub inside a taller frame
+            // (tests/layout.spec.ts, "no empty tail"). Both were measured under
+            // mutation on 2026-11-09 — each one leaves the other test green.
             //
             // The border carries more weight than it looks: darkened, the map sits at
             // about 1,05:1 against the page, so this rule is the only edge it has.

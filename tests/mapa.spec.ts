@@ -6,7 +6,7 @@ import { enderecoUmaLinha } from "../lib/maps";
  * The map that stands where the list of links stood.
  *
  * "Where is this?" is the question #onde exists to answer, and an address in type
- * answers it only for someone who already knows the city. The square answers it for
+ * answers it only for someone who already knows the city. The band answers it for
  * everyone else.
  *
  * The title and the absence of tabindex are asserted here even though axe also
@@ -46,7 +46,7 @@ test("o mapa aponta para o endereço que a página imprime", async ({ page }) =>
   expect(src).toMatch(/^https:\/\/www\.google\.com\/maps\?q=/);
   // The keyless embed form. It is free, which is what RNF09 needs, and undocumented,
   // which is why only its shape is asserted — if Google withdraws it, this test will
-  // still pass and the square will be empty. "Ver no mapa" beside it is the link
+  // still pass and the band will be empty. "Ver no mapa" beside it is the link
   // that keeps working either way.
   expect(src).toContain("output=embed");
   expect(src).toContain("hl=pt-BR");
@@ -116,7 +116,7 @@ test("o mapa carrega sozinho, sem clique", async ({ page }) => {
 
 test("a página diz ao visitante que o mapa vem do Google", async ({ page }) => {
   // Asserted in this file and not with the footer's other line, because the notice
-  // exists because of the map: the day the square goes, this sentence goes with it,
+  // exists because of the map: the day the band goes, this sentence goes with it,
   // and a test here is what ties the two together.
   //
   // Before this map the published page made no third-party request at all. It now
@@ -156,11 +156,17 @@ test("o mapa é uma faixa larga, e ocupa a seção de ponta a ponta", async ({
   expect(moldura.width).toBeGreaterThanOrEqual(titulo.width - 2);
 });
 
-test("a seção não tem coluna vazia embaixo do texto", async ({ page }) => {
-  // The failure this replaces, stated as a rule: nothing in #onde may leave a column
-  // of empty space taller than a line of type. Measured against the band's top edge,
-  // because that is where the old void lived — between the end of the address block
-  // and the bottom of the square beside it.
+test("o vão entre o último texto e o mapa fica entre 16 e 80px", async ({ page }) => {
+  // Named for what it measures, after the Rule 18 gate of 2026-11-09 pointed out that
+  // "no empty column" is not what this asserts. It measures one vertical gap: the end
+  // of the text block to the top of the band.
+  //
+  // That is still the right place to measure, because the old void lived there —
+  // between the bottom of the address and the bottom of the square pinned beside it.
+  // But what the number forbids is the band drifting away from the text or welding
+  // itself to it, not a column: the band spans the section, so there is no second
+  // column left to be empty. The shape of the layout is the business of the band test
+  // above, and of layout.spec.ts.
   const { vaoAbaixoDoTexto } = await page.locator("section#onde").evaluate((secao) => {
     const mapa = secao.querySelector("[data-mapa]")!.getBoundingClientRect();
     const ultimo = secao.querySelector("a")!.getBoundingClientRect();
@@ -173,18 +179,30 @@ test("a seção não tem coluna vazia embaixo do texto", async ({ page }) => {
 test("a atribuição da Google não é cortada pela moldura", async ({ page }) => {
   // The one thing here that would move a theoretical risk into a written violation.
   //
-  // The frame is `overflow-hidden`, for its rounded corners. Today the aspect ratio
-  // lives on the iframe and the frame takes its height, so nothing is clipped — but
-  // moving the ratio up to the frame is the obvious tidy-up, and it would crop
-  // whatever the iframe exceeds. What sits along the bottom of a Google embed is
-  // "Dados do mapa ©2026 Google" and the link to their terms, and their policies say
-  // in so many words not to remove, obscure or hide it.
+  // The frame is `overflow-hidden`, for its rounded corners, so whatever the iframe
+  // exceeds is cut off. What sits along the bottom of a Google embed is "Dados do mapa
+  // ©2026 Google" and the link to their terms, and their policies say in so many words
+  // not to remove, obscure or hide it.
   //
   // The band's own tests measure `[data-mapa]`, which cannot tell a whole map from a
   // clipped one: both boxes are the right size. This measures the relationship —
-  // nothing of the iframe may fall outside the frame that hides overflow. Asked for
-  // by the security review of 2026-11-08; it passes today, and exists for the day
-  // somebody moves one class.
+  // nothing of the iframe may fall outside the frame that hides overflow.
+  //
+  // What it catches, measured under mutation (Rule 18 gate, 2026-11-09): a frame
+  // SHORTER than the map. `h-40` on `[data-mapa]`, with the ratio left on the iframe,
+  // fails here by 96px on the phone and 139px on the desktop, and the message names
+  // the foot of the map. layout.spec.ts stays green through that one.
+  //
+  // What it does NOT catch — and this comment claimed otherwise until the gate proved
+  // it wrong: moving the `aspect-*` UP to the frame. The iframe then has no height of
+  // its own, falls back to the 150px default and sits INSIDE a taller frame. Nothing
+  // is clipped, the attribution survives, and this test passes. That arrangement is
+  // caught by layout.spec.ts's "no empty tail", which measures the other direction and
+  // says so in its own words.
+  //
+  // So the pair is the guard, not this test alone: one forbids the frame from being
+  // shorter than the map, the other from being taller. Asked for by the security
+  // review of 2026-11-08.
   const { sobraAbaixo, sobraLateral } = await page
     .locator("section#onde [data-mapa]")
     .evaluate((frame) => {
