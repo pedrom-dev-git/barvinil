@@ -77,6 +77,15 @@ test("the channel list is gone from #onde, and nothing of it was left behind", a
   for (const rotulo of [/whatsapp/i, /instagram|@barvinil/i, /cardápio/i, /ifood|delivery/i]) {
     await expect(onde.getByRole("link", { name: rotulo }), String(rotulo)).toHaveCount(0);
   }
+
+  // The shape of what is left, because the list above only catches the rows. A
+  // heading whose list was deleted out from under it, or a link that survived the
+  // delete under some other name, passes every assertion so far — measured: a bare
+  // <h3>Contato</h3> left in here went green. The section is its own h2, the
+  // address, the hours, one link and the map, and nothing else.
+  await expect(onde.locator("h1, h3, h4, h5, h6")).toHaveCount(0);
+  await expect(onde.locator("h2")).toHaveCount(1);
+  await expect(onde.getByRole("link"), "sobrou link em #onde").toHaveCount(1);
 });
 
 test("the hero offers the delivery storefront beside its two CTAs", async ({ page }) => {

@@ -173,6 +173,29 @@ test.describe("no celular", () => {
     }
   });
 
+  test("a regra de CSS tira o dock no mesmo quadro em que um painel abre", async ({
+    page,
+  }) => {
+    // The observer is not what protects the submit button, and until this test
+    // existed nothing proved it: swapping the :has() selector in globals.css for a
+    // class that matches nothing left every dock test green, because scrolling to a
+    // booking section hides the dock through the observer anyway.
+    //
+    // So this flips the one attribute an opening panel flips, and nothing else — no
+    // scrolling, so the observer has no reason to run at all. What answers is the
+    // CSS rule, alone, which is the only thing fast enough: the observer is
+    // asynchronous and a thumb is not.
+    await existe(page);
+    await irPara(page, "fotos");
+    await expect(page.locator(DOCK)).toBeVisible();
+
+    await page
+      .locator("[data-painel-reserva]")
+      .first()
+      .evaluate((el) => el.removeAttribute("inert"));
+    await expect(page.locator(DOCK)).toBeHidden();
+  });
+
   test("escondido, está escondido por visibility — não só por opacity", async ({ page }) => {
     // The invariant the form's scroll maths depends on: it decides whether the dock
     // occludes anything by reading `visibility`. Swap `invisible` for `opacity-0`
@@ -214,14 +237,43 @@ test.describe("no celular", () => {
         await s.getByRole("button", { name: /reservar mesa/i }).click();
         const enviar = s.getByRole("button", { name: /enviar/i });
         await expect(enviar).toBeVisible();
-        await enviar.click({ trial: true });
 
-        const alcancavel = await enviar.evaluate((el) => {
+        // Read BEFORE any click, and that order is the whole test. Playwright
+        // re-scrolls an element it finds obstructed and then retries, so a
+        // `trial: true` that runs first quietly moves the button out from under the
+        // overlay — and the elementFromPoint after it reads the rescued state.
+        // Measured: with the dock pinned visible over everything, the original
+        // order passed. This is the page as the thumb finds it: the form has done
+        // its own scroll, nothing else has touched the viewport.
+        // Wait for the PAGE's own scroll, not for Playwright's. FormReserva waits
+        // 300ms into the opening and then smooth-scrolls the send button up to the
+        // fold; measuring before that lands reads a button that is simply still
+        // below it, which is a different complaint. If this never settles, the
+        // button never reaches the guest and the poll says so.
+        await expect
+          .poll(
+            () => enviar.evaluate((el) => el.getBoundingClientRect().bottom - window.innerHeight),
+            { timeout: 5000 },
+          )
+          .toBeLessThanOrEqual(0);
+
+        const quemEstaEmCima = await enviar.evaluate((el) => {
           const b = el.getBoundingClientRect();
-          const topo = document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2);
-          return topo === el || el.contains(topo!) || (topo?.contains(el) ?? false);
+          const x = b.x + b.width / 2;
+          const y = b.y + b.height / 2;
+          const topo = document.elementFromPoint(x, y);
+          if (topo === el || el.contains(topo!) || (topo?.contains(el) ?? false)) return null;
+          if (!topo) {
+            return `nada — o centro do botão (${Math.round(x)},${Math.round(y)}) está fora da viewport de ${window.innerWidth}x${window.innerHeight}`;
+          }
+          const atalhos = topo.closest("[data-atalhos]") ? " [É O DOCK]" : "";
+          return `<${topo.tagName.toLowerCase()} class="${topo.className}">${atalhos}`;
         });
-        expect(alcancavel, `algo está sobre o enviar em #${secao}`).toBe(true);
+        expect(quemEstaEmCima, `algo está sobre o enviar em #${secao}`).toBeNull();
+
+        // And only then the actionability check, which names the interceptor when
+        // there is one.
+        await enviar.click({ trial: true });
       }
     });
 

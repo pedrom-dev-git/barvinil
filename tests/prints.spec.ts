@@ -286,16 +286,20 @@ test.describe("prints", () => {
         .then(() => true)
         .catch(() => false);
 
-      // Skipped rather than failed, and never passed quietly. On the machine these
-      // slides are made from, Google answers a real Chromium with
-      // net::ERR_CONNECTION_ABORTED on this URL — curl gets 200 from the same host,
-      // so it is the browser from this network that is refused, not the address.
-      // Failing would leave `pnpm prints` permanently red for a reason no change to
-      // this repo can fix; passing would hand the discipline a slide with a white
-      // square in it. So it stops here and says which of the two happened.
+      // Skipped rather than failed, and never passed quietly. Failing would leave
+      // `pnpm prints` permanently red for something no change to this repo can fix —
+      // on the machine these slides are made from, Google answers a real Chromium
+      // with net::ERR_CONNECTION_ABORTED on this URL, while curl gets 200 from the
+      // same host. Passing would hand the discipline a slide with a white square.
+      //
+      // The message names no cause, because this test cannot tell them apart: all it
+      // knows is that nothing painted in 20s. The undocumented `output=embed` form
+      // being withdrawn looks exactly the same from here, and lib/maps.ts says no
+      // test would catch that — a message blaming the network would be how that day
+      // gets misread.
       test.skip(
         !pintou,
-        "o mapa não pintou nesta rede (Google aborta a conexão) — print 09 sairia com o quadrado em branco",
+        "o mapa não pintou em 20s — rede bloqueada OU o embed saiu do ar. O print 09 NÃO foi gerado; se houver um no disco, é de outra execução",
       );
       await page.waitForLoadState("networkidle");
       await guardar(s, "09-desktop-onde-quando.png");

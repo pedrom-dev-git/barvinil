@@ -100,11 +100,18 @@ test("o mapa pede o mínimo do visitante e o mínimo do browser", async ({ page 
 });
 
 test("o mapa carrega sozinho, sem clique", async ({ page }) => {
-  // The decision was that it shows itself. So the frame has to be attached and
-  // navigated with nobody having touched anything — with the stub from fixtures.ts
-  // standing in for Google, which is also what proves the stub reaches the iframe.
-  const frame = page.frameLocator(MAPA);
-  await expect(frame.locator("body")).toBeAttached({ timeout: 10_000 });
+  // The decision was that it shows itself, so the frame has to have NAVIGATED with
+  // nobody having touched anything.
+  //
+  // Asserted on the frame's URL, not on its <body>. The first version waited for a
+  // body, and measured, an iframe with `src="about:blank"` has one — the test passed
+  // over a map that was never fetched. A frame whose URL carries the embed form is
+  // the only thing that says the browser actually went and got it.
+  await expect
+    .poll(() => page.frames().some((f) => f.url().includes("output=embed")), {
+      timeout: 10_000,
+    })
+    .toBe(true);
 });
 
 test("a página diz ao visitante que o mapa vem do Google", async ({ page }) => {
