@@ -18,6 +18,18 @@ import { join } from "node:path";
  *  into the discipline's presentation. */
 const ONLINE_DE_PROPOSITO = new Set(["prints.spec.ts"]);
 
+/**
+ * Specs that take their `test` from @playwright/test because they open no browser.
+ *
+ * A different exemption from the one above, and the distinction is the whole point:
+ * prints.spec.ts is online and that is deliberate; export.spec.ts is never online
+ * because it never makes a request at all. It reads the exported files off disk.
+ * Handing it the offline fixture protects nothing and costs a browser — `semRede` is
+ * `auto: true` and depends on `context`, so it launches one per test. That is what
+ * took the deploy down on 2026-11-09.
+ */
+const SEM_BROWSER = new Set(["export.spec.ts"]);
+
 test.describe("wiring", () => {
   test("every spec gets its `test` from ./fixtures, so the suite stays offline", () => {
     const dir = __dirname;
@@ -26,7 +38,7 @@ test.describe("wiring", () => {
 
     const online: string[] = [];
     for (const arquivo of specs) {
-      if (ONLINE_DE_PROPOSITO.has(arquivo)) continue;
+      if (ONLINE_DE_PROPOSITO.has(arquivo) || SEM_BROWSER.has(arquivo)) continue;
       const fonte = readFileSync(join(dir, arquivo), "utf8");
       // Looks for the runner coming in through the front door, in any of the shapes
       // that actually reach it. The first version matched exactly one — a named
@@ -103,9 +115,16 @@ test.describe("wiring", () => {
     }
   });
 
-  test("the file that is online on purpose says so, and is still the only one", () => {
-    const fonte = readFileSync(join(__dirname, "prints.spec.ts"), "utf8");
-    expect(fonte).toContain('from "@playwright/test"');
+  test("the two exemptions say so, and are still the only ones", () => {
+    // Pinned by name, both of them: an exemption that can grow quietly is how the
+    // rule above stops meaning anything, and each of these is exempt for its own
+    // reason — one goes online on purpose, the other never opens a browser.
+    for (const arquivo of [...ONLINE_DE_PROPOSITO, ...SEM_BROWSER]) {
+      expect(readFileSync(join(__dirname, arquivo), "utf8")).toContain(
+        'from "@playwright/test"',
+      );
+    }
     expect([...ONLINE_DE_PROPOSITO]).toEqual(["prints.spec.ts"]);
+    expect([...SEM_BROWSER]).toEqual(["export.spec.ts"]);
   });
 });

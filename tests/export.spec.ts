@@ -1,4 +1,9 @@
-import { test, expect } from "./fixtures";
+// NOT from ./fixtures, and tests/fixtures.spec.ts holds this file to it. These
+// assertions read files off disk: no webServer, no browser project, no request. The
+// offline fixture there is `auto: true` and depends on `context`, so importing it
+// would launch a browser for every test in this file — invisible here, fatal on a
+// runner that ships without one, where it took the deploy down with it.
+import { test, expect } from "@playwright/test";
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
