@@ -55,8 +55,20 @@ export const urlRota = (e: EnderecoMapeavel) =>
  *
  * ⚠️ What that does buy is fragility: Google can withdraw this form without notice,
  * and no test will catch it — the spec can only assert the shape of the src, so the
- * square would simply be empty. The mitigation is that "Ver no mapa" beside it is a
+ * band would simply be empty. The mitigation is that "Ver no mapa" beside it is a
  * plain link that keeps working either way.
+ *
+ * The map is rendered through a CSS filter, and that was ruled on rather than
+ * assumed (security review, 2026-11-08). Google's attribution rules — "don't alter,
+ * hide, or obscure", "don't modify the logo in any way" — live in the Maps Platform
+ * policies, which govern the keyed APIs; the consumer Additional ToS that covers
+ * this keyless form prohibits redistributing, copying and bulk download, and says
+ * nothing about modification. Recolouring on the client is therefore a reputational
+ * risk and not an executable one: with no key there is no project to suspend and no
+ * quota to cut. Measured alongside: the inversion does not cost the attribution its
+ * legibility, and it slightly improves the Google wordmark's contrast. What WOULD
+ * cross the line is cropping the attribution strip — see the warning on the frame in
+ * components/OndeQuando.tsx.
  */
 export const urlMapaEmbed = (e: EnderecoMapeavel) =>
   `https://www.google.com/maps?q=${encodeURIComponent(enderecoUmaLinha(e))}&hl=pt-BR&z=17&output=embed`;
