@@ -344,6 +344,58 @@ export const site = {
     fonte: "⟨A PREENCHER: o dono — o grupo não produz foto (plano-pmv.md §1)⟩",
     status: "a-preencher",
   } as Dado<ReadonlyArray<FotoSlot>>,
+
+  /**
+   * The two rooms of the house, standing between the manifesto and the cards.
+   *
+   * Not part of `fotos` above, and deliberately not named after any of its slots:
+   * these do not ride the gallery. The manifesto they close says the house is "um
+   * sobrado da década de 40, com janelas de madeira azul e sacada de ferro" — and
+   * until now the reader had to take that on trust. These two are what it is
+   * describing: the blue-lit window from the inside, and the iron balcony from the
+   * open floor above it.
+   *
+   * ⚠️ TWO THINGS WERE DECIDED AGAINST THE PROJECT'S OWN RULES, BY PEDRO, 2026-11-09.
+   *
+   * 1. `salao-noite` HAS PEOPLE IN IT — two guests at the back, one behind the strip
+   *    curtain. The `salao` slot above says in so many words that an identifiable
+   *    person requires the signed ANEXO VI, and that release is still an open 🔴 item
+   *    in the course repo's BACKLOG.md. Published anyway, knowingly. If anyone objects,
+   *    the fix is to drop the two lines in ACasa.tsx that render this one — the file is
+   *    in git, so removing it from the page is one commit.
+   * 2. BOTH ARE BELOW SPEC. ASSETS.md asks for 1600px on the short side; these are
+   *    960 (salao-noite) and 1200 (terraco). With images.unoptimized there is no
+   *    srcset, so the browser gets the file as it is and a retina phone renders them
+   *    soft — the same defect already noted for `drink` above. They were accepted as
+   *    they are; replacing either one is dropping a better file over the same name.
+   *
+   * Status is `a-preencher` and they render anyway, exactly as `fotos` above does
+   * (Galeria.tsx:19 is the same bypass). The provenance of these two files was not
+   * recorded and Pedro waived it, so the honest thing is a field that still counts as
+   * pending rather than a `fonte` that claims something nobody checked.
+   */
+  ambientes: {
+    valor: [
+      {
+        id: "salao-noite",
+        arquivo: "salao-noite.jpg",
+        pedido: "O salão à noite, visto de dentro. Fecha o manifesto em #casa.",
+        alt:
+          "Salão à noite, com a janela iluminada de azul, discos de vinil " +
+          "pendurados e uma bola de espelhos sobre as mesas",
+      },
+      {
+        id: "terraco",
+        arquivo: "terraco.jpg",
+        pedido: "A área de cima, aberta. Fecha o manifesto em #casa.",
+        alt:
+          "Área de cima ao entardecer, com móveis de pallet sobre grama " +
+          "sintética, varal de lâmpadas e a cidade ao fundo",
+      },
+    ] as ReadonlyArray<FotoSlot>,
+    fonte: "⟨A PREENCHER: quem fotografou — arquivos entregues via Pedro em 2026-11-09⟩",
+    status: "a-preencher",
+  } as Dado<ReadonlyArray<FotoSlot>>,
 } as const;
 
 /** Every field the owner still has to fill. Rendered by nothing; read by humans. */
