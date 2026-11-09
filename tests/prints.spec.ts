@@ -70,6 +70,18 @@ async function pronta(page: Page) {
   );
 }
 
+/**
+ * The shortcuts dock, asserted into the state each shot is meant to photograph.
+ *
+ * It is a `fixed` bar, so it does not belong to any section's box — and a fullPage
+ * capture lands a fixed element at the foot of the STITCHED image, which is not
+ * where anyone sees it. Every mobile shot below says out loud which state it
+ * expects, in the same spirit as the rest of this file: the dock is away in all
+ * five, because they are taken either at the top of the page or over #reservar,
+ * and shot 11 exists to show it where it actually lives.
+ */
+const dock = (page: Page) => page.locator("[data-atalhos]");
+
 /** Opens the booking panel in `secao` and waits for it to be fully open. */
 async function abrirReserva(page: Page, secao: string) {
   const s = page.locator(secao);
@@ -143,6 +155,8 @@ test.describe("prints", () => {
       );
       expect(estouro).toBeLessThanOrEqual(0);
       await expect(page.locator("section#hero")).toBeVisible();
+      // Nothing floats over the first screen: the hero's own two CTAs are the offer.
+      await expect(dock(page)).toBeHidden();
       await guardar(page, "01-mobile-topo.png");
     });
 
@@ -153,6 +167,9 @@ test.describe("prints", () => {
       }
       // The page says what it is. A print that lost the footer invites the wrong claim.
       await expect(page.getByRole("contentinfo")).toContainText(/prot[óo]tipo/i);
+      // Away, and it has to be: a fullPage capture would park this bar at the foot of
+      // the stitched image, which is a place it never occupies on a real phone.
+      await expect(dock(page)).toBeHidden();
       await guardar(page, "02-mobile-pagina-completa.png", { fullPage: true });
     });
 
@@ -163,6 +180,7 @@ test.describe("prints", () => {
         "aria-expanded",
         "false",
       );
+      await expect(dock(page)).toBeHidden();
       await guardar(s, "03-mobile-reserva-fechada.png");
     });
 
@@ -171,6 +189,7 @@ test.describe("prints", () => {
       await abrirReserva(page, "section#reservar");
       // Empty, and looking empty: a field that reads as answered misleads the slide.
       await expect(page.locator("section#reservar").getByLabel(/nome/i)).toHaveValue("");
+      await expect(dock(page)).toBeHidden();
       await guardar(page.locator("section#reservar"), "04-mobile-reserva-aberta.png");
     });
 
@@ -178,7 +197,21 @@ test.describe("prints", () => {
       await pronta(page);
       await abrirReserva(page, "section#reservar");
       await preencherReserva(page, "section#reservar");
+      await expect(dock(page)).toBeHidden();
       await guardar(page.locator("section#reservar"), "05-mobile-reserva-preenchida.png");
+    });
+
+    test("11 · atalhos", async ({ page }) => {
+      // The one shot where the dock is the subject. The other five are taken where it
+      // is away by design, so without this the slides would never show it at all —
+      // and a fullPage capture is not a substitute: it lands a fixed bar at the foot
+      // of the stitched image instead of over the page.
+      await pronta(page);
+      await page.locator("section#fotos").scrollIntoViewIfNeeded();
+      await expect(dock(page)).toBeVisible();
+      await expect(dock(page).getByRole("link", { name: /ifood/i })).toBeVisible();
+      await expect(dock(page).getByRole("link", { name: /como chegar/i })).toBeVisible();
+      await guardar(page, "11-mobile-atalhos.png");
     });
   });
 
@@ -235,6 +268,36 @@ test.describe("prints", () => {
       const s = page.locator("section#onde");
       // Whatever is still `a-preencher` must not have leaked a marker onto the page.
       await expect(s).not.toContainText("A PREENCHER");
+      // The map is a third-party document and `pronta()` cannot wait for it: it waits
+      // on document.images, and an iframe is not one. This file is the only one that
+      // reaches the real Google, so it is the only one that can tell a working embed
+      // from a blank square — and a blank square is a lie in a slide.
+      //
+      // Waiting for the frame's <body> is NOT enough, and the first version of this
+      // did exactly that: the document exists long before it has drawn anything, the
+      // shot came out white at 20KB, and the test was green over it. What has to be
+      // waited on is paint — the embed draws its tiles into <img> and <canvas>.
+      await expect(s.locator("iframe")).toBeVisible();
+      const mapa = page.frameLocator("section#onde iframe");
+      const pintou = await mapa
+        .locator("img, canvas")
+        .first()
+        .waitFor({ state: "visible", timeout: 20_000 })
+        .then(() => true)
+        .catch(() => false);
+
+      // Skipped rather than failed, and never passed quietly. On the machine these
+      // slides are made from, Google answers a real Chromium with
+      // net::ERR_CONNECTION_ABORTED on this URL — curl gets 200 from the same host,
+      // so it is the browser from this network that is refused, not the address.
+      // Failing would leave `pnpm prints` permanently red for a reason no change to
+      // this repo can fix; passing would hand the discipline a slide with a white
+      // square in it. So it stops here and says which of the two happened.
+      test.skip(
+        !pintou,
+        "o mapa não pintou nesta rede (Google aborta a conexão) — print 09 sairia com o quadrado em branco",
+      );
+      await page.waitForLoadState("networkidle");
       await guardar(s, "09-desktop-onde-quando.png");
     });
 
