@@ -75,6 +75,34 @@ test.describe("wiring", () => {
     );
   });
 
+  test("o spec do export não arrasta browser nenhum junto", () => {
+    // The failure this comes from, and it only ever showed on CI: export.spec.ts
+    // asserts files on disk — no webServer, no browser projects, and it names `page`
+    // zero times. Importing `test` from ./fixtures gave it the `semRede` fixture,
+    // which is `auto: true` and depends on `context`, so every one of its nine tests
+    // started launching a browser it has no use for.
+    //
+    // Locally that is invisible: the browsers are installed. On a runner that ships
+    // without them the whole deploy job dies with "Executable doesn't exist", and the
+    // page does not get published. Reproduced here by pointing
+    // PLAYWRIGHT_BROWSERS_PATH at an empty directory.
+    //
+    // There is nothing for an offline fixture to protect in a suite that makes no
+    // request at all, so this one stays on @playwright/test — and that has to be a
+    // written rule, because "every spec imports ./fixtures" is the other rule in this
+    // very file and it is the one that caused this.
+    const fonte = readFileSync(join(__dirname, "export.spec.ts"), "utf8");
+    expect(fonte, "export.spec.ts voltou a importar a fixture offline").not.toMatch(
+      /from\s+['"]\.\/fixtures['"]/,
+    );
+    for (const fixture of ["page", "context", "browser"]) {
+      expect(
+        fonte,
+        `export.spec.ts passou a usar a fixture \`${fixture}\`, e com ela um browser`,
+      ).not.toMatch(new RegExp(String.raw`async\s*\(\s*\{[^}]*\b${fixture}\b`));
+    }
+  });
+
   test("the file that is online on purpose says so, and is still the only one", () => {
     const fonte = readFileSync(join(__dirname, "prints.spec.ts"), "utf8");
     expect(fonte).toContain('from "@playwright/test"');
