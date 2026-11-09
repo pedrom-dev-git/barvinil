@@ -52,19 +52,21 @@ test("the tagline never leaves a single word on its last line", async ({ page })
   expect(ultima).toBeCloseTo(penultima, 0);
 });
 
-test("the map square is as tall as its own column, with no empty tail", async ({ page }) => {
-  // The failure this inherits from the contact list that stood here: as a grid item
-  // it stretched to the address column's height, so its bottom rule floated under
-  // an empty gap, as if something were missing. A square has a second way to show
-  // the same bug — stretched by the grid it stops being square — so this measures
-  // both, and the frame rather than the iframe, since the frame is what has a rule.
+test("the map's frame is as tall as the map, with no empty tail", async ({ page }) => {
+  // The failure this inherits twice over: first from the contact list that stood
+  // here, then from the square that replaced it — both ended up taller than their
+  // own content, so the bottom rule floated under a gap as if something were
+  // missing. Measured on the frame and not the iframe, because the frame is the
+  // thing with a rule around it.
+  //
+  // The square's proportions are not asserted here any more; the band's shape is
+  // tests/mapa.spec.ts's business, and this stayed about the frame fitting.
   const moldura = page.locator("section#onde [data-mapa]");
-  const { largura, altura, conteudo } = await moldura.evaluate((el) => {
+  const { altura, conteudo } = await moldura.evaluate((el) => {
     const b = el.getBoundingClientRect();
     const dentro = el.firstElementChild!.getBoundingClientRect();
-    return { largura: b.width, altura: b.height, conteudo: dentro.height };
+    return { altura: b.height, conteudo: dentro.height };
   });
-  expect(Math.abs(largura - altura), "a moldura do mapa não está quadrada").toBeLessThanOrEqual(1);
   expect(altura - conteudo, "sobra de moldura abaixo do mapa").toBeLessThanOrEqual(3);
 });
 
